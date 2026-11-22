@@ -1,0 +1,9 @@
+{
+  "client": "Talison",
+  "api":    "https://script.google.com/macros/s/AKfycbyllhrlQXFFvB75FeCU9N0FQPRSqcutpCLwEaVykskLiNJs4UXcnHYKWnsyrEkyC0bY5A/exec",
+  "sites": [
+    { "site": "d1", "name": "CGP3" },
+    { "site": "d2", "name": "CGP1" },
+    { "site": "d3", "name": "CR3 Telescopic" }
+  ]
+}

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Talison – Schedule Data Upload | PalmCrest</title>
+  <style>
+    :root {
+      --navy: #0d1e35;
+      --navy-2: #13294a;
+      --teal: #5ab4d4;
+      --amber: #e89820;
+      --amber-dk: #c8821a;
+      --text: #e8eef5;
+      --muted: #9fb3c8;
+      --ok: #5fd39a;
+      --err: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: "Calibri Light", Calibri, "Segoe UI", Arial, sans-serif; font-weight: 300;
+      background: var(--navy); color: var(--text);
+      padding: 24px 16px;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    header { border-bottom: 1px solid rgba(90,180,212,.35); padding-bottom: 14px; margin-bottom: 22px; }
+    .brand { color: var(--teal); letter-spacing: 3px; font-size: 12px; text-transform: uppercase; }
+    h1 { margin: 6px 0 4px; font-size: 24px; font-weight: 300; }
+    h1 span { color: var(--amber); }
+    .sub { color: var(--muted); font-size: 14px; margin: 0; }
+
+    .panel {
+      background: var(--navy-2); border: 1px solid rgba(90,180,212,.25);
+      border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
+    }
+    .card { border-left: 4px solid var(--amber); }
+    .card h2 { margin: 0 0 12px; font-size: 18px; font-weight: 400; color: var(--teal); letter-spacing: 1px; }
+
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input[type=password], input[type=file], input[type=datetime-local] {
+      width: 100%; padding: 9px 10px; font-size: 14px; font-family: inherit;
+      background: var(--navy); color: var(--text);
+      border: 1px solid rgba(90,180,212,.4); border-radius: 6px;
+    }
+    input[type=file]::file-selector-button {
+      background: var(--teal); color: var(--navy); border: 0; border-radius: 4px;
+      padding: 5px 10px; margin-right: 10px; cursor: pointer; font-family: inherit;
+    }
+    button {
+      margin-top: 12px; width: 100%; padding: 11px; border: 0; border-radius: 6px;
+      background: var(--amber); color: var(--navy); font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer; letter-spacing: .5px;
+    }
+    button:hover:not(:disabled) { background: var(--amber-dk); }
+    button:disabled { background: #556; color: #aab; cursor: default; }
+    .status { margin-top: 12px; font-size: 14px; white-space: pre-line; min-height: 1em; }
+    .ok { color: var(--ok); } .err { color: var(--err); } .busy { color: var(--teal); }
+    input[type=datetime-local] { color-scheme: dark; }
+    .field { margin-top: 10px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">PalmCrest Scheduling Solutions</div>
+      <h1><span id="client">Talison</span> <span>·</span> Schedule Data Upload</h1>
+      <p class="sub">Choose the Excel file exported from MS Project and upload it to the matching shutdown dashboard.</p>
+    </header>
+
+    <div class="panel">
+      <label for="pin">PIN</label>
+      <input type="password" id="pin" autocomplete="off">
+    </div>
+
+    <div id="cards"></div>
+
+    <footer>PalmCrest Consultants</footer>
+  </div>
+
+<script>
+  // Settings come from ../config/client.json  →  { client, api, sites: [ { site, name } ] }
+  // Uploads go to the client's dashboard Apps Script (action=upload, PIN = UPLOAD_PIN).
+  let API = '';
+  const cardsEl = document.getElementById('cards');
+  let SITES = [];
+
+  async function init() {
+    try {
+      const r = await fetch('../config/client.json?t=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const cfg = await r.json();
+      API = cfg.api;
+      SITES = cfg.sites || [];
+      if (cfg.client) {
+        document.getElementById('client').textContent = cfg.client;
+        document.title = cfg.client + ' – Schedule Data Upload | PalmCrest';
+      }
+    } catch (e) {
+      cardsEl.innerHTML = '<div class="panel status err">Could not load the upload settings (' + e.message + ').</div>';
+      return;
+    }
+    SITES.forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'panel card';
+      div.innerHTML =
+        '<h2>' + d.name + '</h2>' +
+        '<input type="file" id="file-' + d.site + '" accept=".xlsx,.xlsm,.xls">' +
+        '<div class="field"><label for="sd-' + d.site + '">Status date (optional)</label>' +
+        '<input type="datetime-local" id="sd-' + d.site + '" step="900">' +
+        '<div class="hint">The status date used in MS Project. Leave blank to keep the dashboard’s current status date.</div></div>' +
+        '<button id="btn-' + d.site + '">Upload to ' + d.name + '</button>' +
+        '<div class="status" id="status-' + d.site + '"></div>';
+      cardsEl.appendChild(div);
+      div.querySelector('button').addEventListener('click', () => go(d));
+    });
+  }
+
+  function setStatus(key, msg, cls) {
+    const s = document.getElementById('status-' + key);
+    s.className = 'status ' + (cls || '');
+    s.textContent = msg;
+  }
+
+  function setBusy(busy) {
+    SITES.forEach(d => document.getElementById('btn-' + d.site).disabled = busy);
+  }
+
+  function readAsBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = e => resolve(String(e.target.result).split(',')[1]);
+      r.onerror = () => reject(new Error('Could not read the file.'));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function go(d) {
+    const fileInput = document.getElementById('file-' + d.site);
+    const f = fileInput.files[0];
+    const pin = document.getElementById('pin').value;
+    const statusDate = document.getElementById('sd-' + d.site).value;   // '' or yyyy-MM-ddTHH:mm
+
+    if (!f) return setStatus(d.site, 'Please choose a file.', 'err');
+    if (!pin) return setStatus(d.site, 'Please enter the PIN at the top.', 'err');
+    if (!confirm('Replace the data in ' + d.name + ' with "' + f.name + '"?' +
+                 (statusDate ? '\nStatus date: ' + statusDate.replace('T', ' ') : ''))) return;
+
+    setBusy(true);
+    setStatus(d.site, 'Uploading and updating… this can take up to a minute. Please keep this page open.', 'busy');
+
+    try {
+      const base64 = await readAsBase64(f);
+      const res = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight
+        body: JSON.stringify({ site: d.site, action: 'upload', pin: pin, fileName: f.name, base64: base64, statusDate: statusDate })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus(d.site, data.message, 'ok');
+        fileInput.value = '';
+      } else {
+        setStatus(d.site, data.message, 'err');
+      }
+    } catch (err) {
+      setStatus(d.site, 'Upload failed: ' + (err.message || err) + '\nCheck your connection and try again.', 'err');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
