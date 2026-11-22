@@ -4,6 +4,8 @@ One repo for all Talison shutdown dashboards.
 
 | Path | What |
 |---|---|
+| `index.html` | The hub (sign-in + tiles). Codes are checked by the Apps Script |
+| `config/hub.json` | Hub tiles and text (no codes in it — safe to be public) |
 | `dashboard/index.html` | The ONE dashboard page (shared by every site) |
 | `config/d1.json` … | Per-dashboard settings: title + API URL |
 | `gantt/index.html` | The ONE online Gantt page (shared by every site) |
@@ -23,3 +25,7 @@ Backend: one Apps Script project ("TAL-Dashboards-API") serving all sites via `&
 Edit `dashboard/index.html` or `gantt/index.html` once — every site picks it up.
 
 The Gantt reads the Tasks tab through the backend (`action=taskscsv`), so the Google Sheets don't need public sharing.
+
+## Hub codes
+Set in the dashboard Apps Script → Project Settings → Script Properties:
+`HUB_ACCESS_CODE` (everyone), `HUB_ADMIN_PIN` (admin), optional `HUB_SESSION_HOURS` (default 12).

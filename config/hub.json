@@ -1,0 +1,38 @@
+{
+  "hubTitle": "Talison Shutdown Hub",
+  "subtitle": "Talison Lithium · Shutdown Management Portal",
+  "footer": "Powered by PalmCrest Scheduling Solutions",
+  "rows": [
+    {
+      "name": "Shutdown Dashboards",
+      "tiles": [
+        { "id": "d1", "title": "CGP3 Dashboard", "desc": "Shutdown KPIs, S-curve and progress reporting", "icon": "chart", "url": "d1/", "enabled": true, "open": "tab" },
+        { "id": "d2", "title": "CGP1 Dashboard", "desc": "Shutdown KPIs, S-curve and progress reporting", "icon": "chart", "url": "d2/", "enabled": true, "open": "tab" },
+        { "id": "d3", "title": "CR3 Telescopic Dashboard", "desc": "Shutdown KPIs, S-curve and progress reporting", "icon": "chart", "url": "d3/", "enabled": true, "open": "tab" }
+      ]
+    },
+    {
+      "name": "Online Gantts",
+      "tiles": [
+        { "id": "g1", "title": "CGP3 Gantt", "desc": "Interactive WBS Gantt from the live schedule", "icon": "gantt", "url": "d1/gantt/", "enabled": true, "open": "tab" },
+        { "id": "g2", "title": "CGP1 Gantt", "desc": "Interactive WBS Gantt from the live schedule", "icon": "gantt", "url": "d2/gantt/", "enabled": true, "open": "tab" },
+        { "id": "g3", "title": "CR3 Telescopic Gantt", "desc": "Interactive WBS Gantt from the live schedule", "icon": "gantt", "url": "d3/gantt/", "enabled": true, "open": "tab" }
+      ]
+    },
+    {
+      "name": "TV Displays",
+      "tiles": [
+        { "id": "tv1", "title": "CGP3 TV Dashboard", "desc": "16:9 format for display screens", "icon": "live", "url": "d1/?tv=1", "enabled": true, "open": "tab" },
+        { "id": "tv2", "title": "CGP1 TV Dashboard", "desc": "16:9 format for display screens", "icon": "live", "url": "d2/?tv=1", "enabled": true, "open": "tab" },
+        { "id": "tv3", "title": "CR3 Telescopic TV Dashboard", "desc": "16:9 format for display screens", "icon": "live", "url": "d3/?tv=1", "enabled": true, "open": "tab" }
+      ]
+    },
+    {
+      "name": "Tools",
+      "tiles": [
+        { "id": "upload", "title": "Schedule Data Upload", "desc": "Upload the MS Project Excel export", "icon": "upload", "url": "upload/", "enabled": true, "open": "tab" },
+        { "id": "feedback", "title": "Shutdown Feedback", "desc": "Submit feedback", "icon": "doc", "url": "https://jbbunno.github.io/ShutFeedback/", "enabled": true, "open": "tab" }
+      ]
+    }
+  ]
+}
