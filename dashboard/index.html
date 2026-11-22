@@ -296,11 +296,15 @@ html.tv table{font-size:15px} html.tv th{font-size:12px} html.tv td{padding-top:
 html.tv .panel-title{font-size:13px}
 html.tv .filter-row input,html.tv .filter-row select{min-height:48px;font-size:16px;padding:8px 12px}
 /* Executive Summary on one screen */
-html.tv #tab-exec.active{display:grid;grid-template-columns:1.3fr 1fr;grid-template-rows:auto auto auto minmax(0,1fr);
+html.tv #tab-exec.active{display:grid;grid-template-columns:1.3fr 1fr;grid-template-rows:auto auto fit-content(52%) minmax(300px,1fr);
   grid-template-areas:"kpi kpi" "mw mw" "areas prog" "sc sc";gap:12px}
 html.tv #tab-exec>*{margin:0}
 html.tv .ex-kpi{grid-area:kpi} html.tv .ex-mw{grid-area:mw}
-html.tv .ex-areas{grid-area:areas;overflow:auto} html.tv .ex-prog{grid-area:prog;overflow:hidden}
+html.tv .ex-areas{grid-area:areas;overflow:auto;min-height:0;scrollbar-width:thin} html.tv .ex-prog{grid-area:prog;overflow:auto;min-height:0;scrollbar-width:thin}
+html.tv .ex-areas thead th{position:sticky;top:0;z-index:1;background:var(--panel)}
+/* long area lists (more than 10): tighter rows so more fit before scrolling */
+html.tv.tv-many .ex-areas td{padding-top:4px;padding-bottom:4px;font-size:14px}
+html.tv.tv-many .gantt-track{height:15px} html.tv.tv-many .gantt-label,html.tv.tv-many .gantt-pct{font-size:12px}
 html.tv .ex-sc{grid-area:sc;display:flex;flex-direction:column;min-height:0}
 html.tv #scurveBox{flex:1;min-height:0;height:auto!important}
 html.tv #execShutdownName{font-size:34px}
@@ -550,6 +554,23 @@ if (TV) {
   clock(); setInterval(clock, 15000);
   setInterval(() => loadAll(true), 5 * 60 * 1000);   // quiet auto-refresh every 5 min
 }
+// Long lists on an unattended TV: scroll slowly down, pause, jump back to the top.
+// Stops while someone is touching / scrolling the panel.
+function tvAutoScroll(el) {
+  if (!el || el._tvScroll) return;
+  el._tvScroll = true;
+  let pause = 120, held = 0;                  // ticks (×50 ms)
+  const hold = () => { held = 200; };          // 10 s after any touch/scroll by a person
+  ['wheel','touchstart','pointerdown'].forEach(ev => el.addEventListener(ev, hold, { passive: true }));
+  setInterval(() => {
+    if (held > 0) { held--; return; }
+    if (el.scrollHeight - el.clientHeight < 4) return;   // fits — nothing to do
+    if (pause > 0) { pause--; return; }
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) { el.scrollTop = 0; pause = 120; return; }
+    el.scrollTop += 1;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 1) pause = 100;   // rest at the bottom
+  }, 50);
+}
 function tvFullscreen() {
   const el = document.documentElement;
   if (document.fullscreenElement) document.exitFullscreen();
@@ -666,6 +687,11 @@ function renderExec() {
   const d = _exec;
   if (!d || !d.kpis) return;
   const { kpis, areas } = d;
+  if (TV) {
+    document.documentElement.classList.toggle('tv-many', (areas || []).length > 10);
+    tvAutoScroll(document.querySelector('.ex-areas'));
+    tvAutoScroll(document.querySelector('.ex-prog'));
+  }
   // KPI band — always top-level rollup
   const pc  = kpis.pctComplete || 0;
   const ov  = kpis.forecastOverrun || 0;
