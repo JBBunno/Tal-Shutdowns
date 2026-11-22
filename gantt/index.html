@@ -190,7 +190,7 @@ body:not(.sched) .sched-only{display:none!important}
 </div>
 
 <div class="toolbar">
-  <input type="search" id="q" placeholder="Search task, WBS, work order…">
+  <input type="search" id="q" name="gantt-task-search" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search task, WBS, work order…">
   <label>Filter</label>
   <select id="filter">
     <option value="all">All tasks</option>
@@ -291,7 +291,7 @@ body:not(.sched) .sched-only{display:none!important}
 <div class="ovl" id="pinOvl"><div class="dlg" style="max-width:340px">
   <h3>Scheduler access</h3>
   <div class="db"><p style="margin-top:0">Enter the scheduler PIN to load a different file or sheet.</p>
-    <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" style="width:100%">
+    <input id="pinIn" type="text" name="gantt-sched-pin" inputmode="numeric" autocomplete="off" style="width:100%;-webkit-text-security:disc">
     <p id="pinErr" style="color:var(--crit);margin-bottom:0;min-height:1em"></p></div>
   <div class="df"><button id="pinCancel">Cancel</button><button class="primary" id="pinGo">Unlock</button></div>
 </div></div>
@@ -1483,6 +1483,7 @@ async function boot(){
   }
   loadSample();
 }
+try { $('#q').value = ''; } catch(e) {}
 loadSiteConfig().then(boot).catch(e => { toast(e.message, 9000); });
 </script>
 </body>
