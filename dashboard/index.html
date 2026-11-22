@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shutdown Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap');
+:root {
+  --coal:    #0d1117;
+  --slate:   #161b22;
+  --panel:   #1c2330;
+  --panel2:  #1a2840;
+  --border:  #2a3444;
+  --muted:   #4d6080;
+  --text:    #b8c9e0;
+  --bright:  #e2eaf5;
+  --amber:   #f5a623;
+  --green:   #2dcc8a;
+  --red:     #e05555;
+  --blue:    #4b8ef5;
+  --teal:    #0d7a8a;
+  --font-d:  'DM Mono','Courier New',monospace;
+  --font-u:  'Inter',system-ui,sans-serif;
+  --r: 6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--coal);color:var(--text);font-family:var(--font-u);font-size:14px;min-height:100vh}
+/* ── HEADER ── */
+header{
+  background:var(--slate);border-bottom:1px solid var(--border);
+  padding:10px 20px;display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:200;flex-wrap:wrap;
+}
+.logo{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);white-space:nowrap}
+.hdr-name{font-size:14px;font-weight:500;color:var(--bright);flex:1;min-width:100px}
+.hdr-meta{font-family:var(--font-d);font-size:11px;color:var(--muted);white-space:nowrap}
+.hdr-ago{font-family:var(--font-d);font-size:12px;font-weight:600;white-space:nowrap}
+.btn{background:transparent;border:1px solid var(--border);color:var(--text);
+  padding:5px 14px;border-radius:var(--r);cursor:pointer;font-size:12px;
+  font-family:var(--font-u);transition:border-color .15s,color .15s;white-space:nowrap}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+/* ── TABS ── */
+nav{background:var(--slate);border-bottom:1px solid var(--border);display:flex;padding:0 20px}
+nav button{
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);cursor:pointer;font-family:var(--font-u);font-size:13px;
+  padding:9px 16px;white-space:nowrap;transition:color .15s,border-color .15s;
+}
+nav button.active,nav button:hover{color:var(--bright)}
+nav button.active{border-bottom-color:var(--amber)}
+/* ── LAYOUT ── */
+main{padding:16px 20px;max-width:1600px;margin:0 auto}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.mb12{margin-bottom:12px}
+.mb16{margin-bottom:16px}
+/* ── SHUTDOWN NAME / KPI BAND ── */
+.name-kpi-band{
+  background:linear-gradient(135deg,#0d4a5a 0%,#0a3545 50%,#0d1a2e 100%);
+  border:1px solid #1a5570;border-radius:var(--r);
+  padding:14px 20px;margin-bottom:12px;
+  display:flex;align-items:center;gap:0;flex-wrap:wrap;
+}
+.shutdown-name-block{
+  flex:1;min-width:200px;
+  font-size:28px;font-weight:700;color:#fff;
+  letter-spacing:-.01em;line-height:1.1;
+  padding-right:24px;border-right:1px solid rgba(255,255,255,.15);
+  margin-right:0;
+}
+.kpi-band{display:flex;flex:2;flex-wrap:wrap}
+.kpi-cell{
+  flex:1;min-width:130px;padding:4px 20px;
+  border-right:1px solid rgba(255,255,255,.1);
+}
+.kpi-cell:last-child{border-right:none}
+.kpi-cell-label{
+  font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(255,255,255,.5);margin-bottom:4px;
+}
+.kpi-cell-value{
+  font-family:var(--font-d);font-size:22px;font-weight:500;color:#fff;line-height:1;
+}
+.kpi-cell-value.big{font-size:30px}
+.kv-green{color:var(--green)!important}
+.kv-amber{color:var(--amber)!important}
+.kv-red{color:var(--red)!important}
+.kv-white{color:#fff!important}
+/* ── MAINTENANCE WINDOW BAND ── */
+.maint-band{
+  background:var(--panel2);border:1px solid #1e3a5a;border-radius:var(--r);
+  padding:10px 18px;margin-bottom:12px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:0;
+}
+.maint-title{
+  font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--amber);padding-right:18px;border-right:1px solid var(--border);
+  margin-right:18px;white-space:nowrap;align-self:stretch;display:flex;align-items:center;
+}
+.maint-fields{display:flex;flex-wrap:wrap;gap:20px;flex:1}
+.maint-field{}
+.maint-field-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.maint-field-value{font-family:var(--font-d);font-size:13px;color:var(--bright);font-weight:500}
+.maint-field-value.green{color:var(--green)}
+.maint-field-value.amber{color:var(--amber)}
+.maint-field-value.red{color:var(--red)}
+/* ── PANEL ── */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:12px}
+.panel-title{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+/* ── AREA TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{
+  padding:7px 10px;color:var(--muted);font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid var(--border);
+  text-align:right;white-space:nowrap;
+}
+th:first-child{text-align:left}
+td{padding:7px 10px;border-bottom:1px solid rgba(42,52,68,.4);text-align:right;white-space:nowrap;color:var(--text)}
+td:first-child{text-align:left;color:var(--bright);font-weight:500}
+tr:hover td{background:rgba(75,142,245,.04)}
+.tag{display:inline-block;border-radius:3px;font-size:10px;padding:2px 7px;font-family:var(--font-d);font-weight:500}
+.tag-green{color:var(--green);background:rgba(45,204,138,.12)}
+.tag-amber{color:var(--amber);background:rgba(245,166,35,.12)}
+.tag-red{color:var(--red);background:rgba(224,85,85,.12)}
+.tag-blue{color:var(--blue);background:rgba(75,142,245,.12)}
+.fv-pos{color:var(--red);font-family:var(--font-d)}
+.fv-neg{color:var(--green);font-family:var(--font-d)}
+.fv-zero{color:var(--muted);font-family:var(--font-d)}
+/* ── GANTT ── */
+.gantt-wrap{display:flex;flex-direction:column;gap:5px}
+.gantt-row{display:flex;align-items:center;gap:8px}
+.gantt-label{width:150px;font-size:11px;color:var(--text);text-align:right;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0}
+.gantt-track{flex:1;height:16px;background:var(--border);border-radius:3px;overflow:hidden;display:flex;position:relative}
+.gantt-target{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1px;background:var(--amber);box-shadow:0 0 0 1px rgba(0,0,0,.45);border-radius:1px;pointer-events:none}
+.gantt-offset{height:100%;background:transparent}
+.gantt-done{height:100%;background:var(--green)}
+.gantt-rem{height:100%;background:rgba(75,142,245,.35)}
+.gantt-pct{font-family:var(--font-d);font-size:10px;color:var(--muted);width:78px;text-align:right;flex-shrink:0;white-space:nowrap}
+.gantt-pct b{font-weight:600}
+.tgt-ok{color:var(--green)} .tgt-warn{color:var(--amber)} .tgt-bad{color:var(--red)}
+.gantt-legend{display:flex;gap:14px;margin-bottom:10px;font-size:11px;color:var(--muted)}
+.gantt-legend span{display:flex;align-items:center;gap:5px}
+.gantt-legend i{display:inline-block;width:12px;height:7px;border-radius:2px}
+/* ── S-CURVE ── */
+.scurve-controls{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.chart-legend{display:flex;gap:18px;margin-bottom:10px;flex-wrap:wrap}
+.chart-legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.leg-line{width:24px;height:2px;border-radius:1px}
+/* ── FIELD UPDATES ── */
+.filter-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+input[type=text]{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-family:var(--font-u);font-size:13px;
+  padding:6px 12px;outline:none;width:220px;transition:border-color .15s;
+}
+input[type=text]:focus{border-color:var(--amber)}
+select{
+  background:var(--panel);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--r);padding:6px 10px;font-size:12px;
+  font-family:var(--font-u);outline:none;cursor:pointer;
+}
+select:focus{border-color:var(--amber)}
+.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:11px;font-family:var(--font-d)}
+.badge-done{color:var(--green);background:rgba(45,204,138,.12)}
+.badge-pend{color:var(--amber);background:rgba(245,166,35,.12)}
+td.notes-cell{white-space:normal;max-width:260px;color:var(--bright);text-align:left}
+/* ── OUTSTANDING SUMMARY COUNTS ── */
+.out-summary-band{display:flex;gap:20px;flex-wrap:wrap;margin-top:8px}
+.out-summary-cell{
+  display:flex;flex-direction:column;gap:2px;
+  padding:6px 16px;border-right:1px solid var(--border);
+}
+.out-summary-cell:last-child{border-right:none}
+.out-summary-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.out-summary-value{font-family:var(--font-d);font-size:18px;font-weight:500}
+/* ── LOADING / ERROR ── */
+.overlay{
+  position:fixed;inset:0;background:var(--coal);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;
+}
+.spinner{width:34px;height:34px;border:3px solid var(--border);
+  border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin-text{font-size:13px;color:var(--muted)}
+.err{background:rgba(224,85,85,.1);border:1px solid var(--red);border-radius:var(--r);
+  color:var(--red);padding:10px 16px;margin-bottom:12px;font-size:13px;display:none}
+
+/* ── PACKAGE DRILL-DOWN POP-UP (added) ── */
+#areaTable tbody tr.pd-click{cursor:pointer}
+#areaTable tbody tr.pd-click:hover td{background:rgba(245,166,35,.06)}
+#areaTable tbody tr.pd-click td:first-child::after{content:"›";color:var(--muted);margin-left:8px;font-weight:600}
+.gantt-row.pd-click{cursor:pointer;border-radius:4px}
+.gantt-row.pd-click:hover{background:rgba(245,166,35,.06)}
+.gantt-row.pd-click:hover .gantt-label{color:var(--amber)}
+.pd-bg{position:fixed;inset:0;background:rgba(5,8,12,.7);display:none;align-items:center;justify-content:center;z-index:900;padding:16px}
+.pd-bg.open{display:flex}
+.pd-modal{background:var(--slate);border:1px solid var(--border);border-radius:8px;width:100%;max-width:860px;max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.55);overflow:hidden}
+.pd-head{background:var(--panel2);padding:16px 20px;display:flex;gap:12px;align-items:flex-start;border-bottom:2px solid var(--amber)}
+.pd-eyebrow{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);margin-bottom:4px}
+.pd-title{font-size:17px;font-weight:600;line-height:1.3;color:var(--bright)}
+.pd-close{margin-left:auto;background:none;border:none;color:var(--muted);font-size:24px;line-height:1;cursor:pointer;padding:0 4px}
+.pd-close:hover{color:var(--bright)}
+.pd-body{padding:18px 20px;overflow:auto}
+.pd-bar{height:10px;background:var(--panel);border-radius:5px;overflow:hidden;margin-bottom:16px}
+.pd-bar b{display:block;height:100%;background:var(--green)}
+.pd-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;margin-bottom:16px}
+@media(max-width:520px){.pd-grid{grid-template-columns:repeat(2,1fr)}}
+.pd-label{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.pd-value{font-family:var(--font-d);font-size:13px;color:var(--bright)}
+.pd-sec-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-bottom:6px}
+.pd-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+@media(max-width:520px){.pd-stats{grid-template-columns:repeat(3,1fr)}}
+.pd-stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;text-align:center}
+.pd-stat b{display:block;font-family:var(--font-d);font-size:18px;color:var(--bright)}
+.pd-stat span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pd-late{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:6px}
+.pd-late th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:right;padding:6px 8px;border-bottom:1px solid var(--border)}
+.pd-late th:first-child,.pd-late td:first-child,.pd-late th:nth-child(2),.pd-late td:nth-child(2){text-align:left}
+.pd-late td{padding:6px 8px;border-bottom:1px solid rgba(42,52,68,.6);text-align:right;color:var(--text)}
+.pd-notes{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--amber);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.55;color:var(--bright);white-space:pre-wrap;word-break:break-word}
+.pd-notes.pd-empty{color:var(--muted);font-style:italic;border-left-color:var(--border)}
+.pd-more{font-size:11px;color:var(--muted);margin:4px 0 16px}
+.pd-loading{font-size:12px;color:var(--muted);margin-bottom:16px}
+.pd-tile{cursor:pointer;transition:border-color .12s,background .12s}
+.pd-tile:hover{border-color:var(--blue)}
+.pd-tile.sel{border-color:var(--amber);background:rgba(232,152,32,.08)}
+.pd-hint{color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400}
+.pd-list-head{font-size:11px;color:var(--muted);margin:2px 0 6px}
+.pd-scroll{max-height:320px;overflow:auto;border:1px solid var(--border);border-radius:var(--r)}
+.pd-scroll thead th{position:sticky;top:0;background:var(--slate);z-index:1}
+.pd-wbs{color:var(--muted);font-family:var(--font-d);font-size:11px;white-space:nowrap}
+.pd-wo{color:var(--muted);font-family:var(--font-d);font-size:11px;white-space:nowrap}
+.pd-ms{color:var(--amber);font-size:10px}
+.pd-note{cursor:help;font-size:11px}
+.sd-chip{font-family:var(--font-d);font-size:11px;white-space:nowrap;background:transparent;color:var(--amber);
+  border:1px solid rgba(232,152,32,.5);border-radius:var(--r);padding:4px 9px;cursor:pointer}
+.sd-chip:hover{background:rgba(232,152,32,.1)}
+.vend-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.vend-scroll{max-height:calc(100vh - 210px);overflow:auto}
+.vend-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:0;align-items:start}
+.vend-right{border-left:1px solid var(--border);position:relative}
+.vend-left thead th{position:sticky;top:0;z-index:2;background:var(--panel)}
+.vend-sub{color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;font-size:11px}
+.vend-area{background:var(--panel);color:var(--bright);border:1px solid var(--border);border-radius:var(--r);
+  padding:6px 10px;font-family:var(--font-u);font-size:12px;max-width:320px}
+html.tv .vend-area{font-size:16px;min-height:44px}
+#vendorTable{width:100%}
+#vendorTable th{cursor:pointer;user-select:none;white-space:nowrap}
+#vendorTable th:hover{color:var(--bright)}
+#vendorTable tbody tr{height:31px}
+#vendorTable td{font-family:var(--font-d);white-space:nowrap}
+#vendorTable td:first-child{font-family:var(--font-u);font-weight:500;color:var(--bright)}
+.vend-axis{position:sticky;top:0;z-index:2;background:var(--panel);display:flex;justify-content:space-between;
+  font-family:var(--font-d);font-size:10px;color:var(--muted);padding:0 10px;border-bottom:1px solid var(--border)}
+html.tv #tab-vendor.active .vend-panel{flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
+html.tv .vend-scroll{flex:1;min-height:0;max-height:none}
+html.tv #vendorTable tbody tr{height:38px}
+.gap-ok{color:var(--green)} .gap-warn{color:var(--amber);font-weight:600} .gap-bad{color:var(--red);font-weight:600;cursor:help}
+.sd-chip.unset{color:var(--red);border-color:rgba(224,85,85,.6)}
+.sd-row{display:grid;gap:10px}
+.sd-row label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sd-row select{padding:9px 6px;background:var(--panel);color:var(--bright);border:1px solid var(--border);
+  border-radius:var(--r);font-family:var(--font-d);font-size:13px}
+.sd-row input{width:100%;padding:9px 10px;background:var(--panel);color:var(--bright);border:1px solid var(--border);
+  border-radius:var(--r);font-family:var(--font-d);font-size:13px;color-scheme:dark}
+.sd-msg{font-size:12px;min-height:1em;margin-top:8px}
+.sd-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+
+/* ════════ TV / TOUCH-SCREEN MODE  (open with ?tv=1) ════════
+   The whole page is laid out on a fixed 1920×1080 "stage" that is scaled to fit
+   the screen, so nothing is cut off on any 16:9 display. Lists scroll inside
+   their own panel (finger swipe); touch targets are enlarged. */
+.tv-only,.tv-clock{display:none}
+html.tv,html.tv body{width:100%;height:100%;overflow:hidden;background:#05080d}
+html.tv #tvStage{position:fixed;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;
+  display:flex;flex-direction:column;overflow:hidden;background:var(--coal);font-size:16px}
+html.tv .tv-only{display:inline-flex}
+html.tv .tv-clock{display:inline;font-family:var(--font-d);font-size:20px;color:var(--bright);margin-left:12px}
+html.tv header{flex:none;padding:10px 24px;gap:14px}
+html.tv header .hdr-name{font-size:20px}
+html.tv header .hdr-meta,html.tv header .hdr-ago{font-size:14px}
+html.tv header .btn,html.tv .sd-chip{min-height:44px;padding:8px 18px;font-size:15px}
+html.tv nav{flex:none;padding:0 24px}
+html.tv nav button{font-size:19px;padding:16px 30px;min-height:60px}
+html.tv main{flex:1;min-height:0;max-width:none;width:100%;padding:14px 24px;display:flex;flex-direction:column;overflow:hidden}
+html.tv .err{flex:none}
+html.tv .tab-panel.active{flex:1;min-height:0;display:flex;flex-direction:column}
+/* lists: last panel fills the screen and scrolls inside */
+html.tv .tab-panel>.panel:last-child{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
+html.tv .tab-panel>.panel:last-child .tbl-wrap{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+html.tv thead th{position:sticky;top:0;z-index:1;background:var(--panel)}
+html.tv table{font-size:15px} html.tv th{font-size:12px} html.tv td{padding-top:9px;padding-bottom:9px}
+html.tv .panel-title{font-size:13px}
+html.tv .filter-row input,html.tv .filter-row select{min-height:48px;font-size:16px;padding:8px 12px}
+/* Executive Summary on one screen */
+html.tv #tab-exec.active{display:grid;grid-template-columns:1.3fr 1fr;grid-template-rows:auto auto auto minmax(0,1fr);
+  grid-template-areas:"kpi kpi" "mw mw" "areas prog" "sc sc";gap:12px}
+html.tv #tab-exec>*{margin:0}
+html.tv .ex-kpi{grid-area:kpi} html.tv .ex-mw{grid-area:mw}
+html.tv .ex-areas{grid-area:areas;overflow:auto} html.tv .ex-prog{grid-area:prog;overflow:hidden}
+html.tv .ex-sc{grid-area:sc;display:flex;flex-direction:column;min-height:0}
+html.tv #scurveBox{flex:1;min-height:0;height:auto!important}
+html.tv #execShutdownName{font-size:34px}
+html.tv .kpi-cell-label{font-size:12px} html.tv .kpi-cell-value{font-size:24px} html.tv .kpi-cell-value.big{font-size:40px}
+html.tv .ex-areas td{padding-top:7px;padding-bottom:7px}
+/* areas table on TV: Area, % Comp, Target, Remaining, Forecast Finish, Hrs to Critical, Finish Var */
+html.tv #areaTable th:nth-child(4),html.tv #areaTable td:nth-child(4),
+html.tv #areaTable th:nth-child(5),html.tv #areaTable td:nth-child(5),
+html.tv #areaTable th:nth-child(6),html.tv #areaTable td:nth-child(6),
+html.tv #areaTable th:nth-child(8),html.tv #areaTable td:nth-child(8){display:none}
+html.tv .tag{font-size:13px;padding:3px 9px}
+html.tv .maint-field-label{font-size:11px} html.tv .maint-field-value{font-size:16px}
+html.tv #maintAreaSelect{font-size:12px!important}
+html.tv .gantt-label{font-size:13px;width:200px} html.tv .gantt-track{height:20px} html.tv .gantt-pct{font-size:13px;width:96px}
+html.tv .chart-legend-item{font-size:13px}
+/* pop-ups */
+html.tv .pd-modal{max-width:1200px;max-height:960px;font-size:16px}
+html.tv .pd-scroll{max-height:470px}
+html.tv .pd-close{font-size:34px;padding:4px 14px}
+html.tv .pd-tile{min-height:84px}
+</style>
+</head>
+<body>
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <div class="spin-text">Loading shutdown data…</div>
+</div>
+<header>
+  <span class="logo">Palm Crest</span>
+  <span class="hdr-name" id="hdrName">Shutdown Dashboard</span>
+  <span class="hdr-meta" id="hdrUpload"></span>
+  <span class="hdr-ago" id="hdrAgo"></span>
+  <button class="sd-chip" id="sdChip" onclick="sdOpen()" title="Scheduler: change the status date (PIN)">Status date: —</button>
+  <span class="tv-clock" id="tvClock"></span>
+  <button class="btn tv-only" onclick="tvFullscreen()">⛶ Full screen</button>
+  <button class="btn" onclick="loadAll()">↻ Refresh</button>
+</header>
+<nav>
+  <button class="active" onclick="switchTab('exec',this)">Executive Summary</button>
+  <button onclick="switchTab('critical',this)">Critical Works</button>
+  <button onclick="switchTab('vendor',this)">Vendor Updates</button>
+  <button onclick="switchTab('field',this)">Field Updates</button>
+  <button onclick="switchTab('outstanding',this)">Outstanding</button>
+</nav>
+<main>
+  <div class="err" id="errBanner"></div>
+  <!-- ══ EXECUTIVE SUMMARY ══ -->
+  <div id="tab-exec" class="tab-panel active">
+    <!-- Name + KPIs -->
+    <div class="name-kpi-band mb12 ex-kpi" id="nameKpiBand">
+      <div class="shutdown-name-block" id="execShutdownName">SHUTDOWN NAME HERE</div>
+      <div class="kpi-band" id="execKpiBand"></div>
+    </div>
+    <!-- Maintenance Window -->
+    <div class="maint-band mb12 ex-mw">
+      <div class="maint-title">
+        <select id="maintAreaSelect" onchange="renderMaintWindow()" style="
+          background:transparent;border:none;color:var(--amber);
+          font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+          cursor:pointer;outline:none;font-family:var(--font-u);width:280px;
+        "></select>
+      </div>
+      <div class="maint-fields" id="maintFields"></div>
+    </div>
+    <!-- Shutdown Areas Table -->
+    <div class="panel mb12 ex-areas">
+      <div class="panel-title">Shutdown Areas</div>
+      <div class="tbl-wrap"><table id="areaTable"></table></div>
+    </div>
+    <!-- Gantt -->
+    <div class="panel mb12 ex-prog">
+      <div class="panel-title">Shutdown Progress</div>
+      <div class="gantt-legend">
+        <span><i style="background:var(--muted)"></i> Start Offset</span>
+        <span><i style="background:var(--green)"></i> Complete</span>
+        <span><i style="background:rgba(75,142,245,.35)"></i> Remaining</span>
+        <span><i style="background:var(--amber);width:3px"></i> Target (baseline at status date)</span>
+        <span style="margin-left:auto">Actual % / Target %</span>
+      </div>
+      <div class="gantt-wrap" id="ganttChart"></div>
+    </div>
+    <!-- S-Curve -->
+    <div class="panel ex-sc">
+      <div class="scurve-controls">
+        <div class="panel-title" style="margin:0">S-Curve</div>
+        <select id="scurveArea" onchange="renderScurve()"></select>
+      </div>
+      <div class="chart-legend">
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:var(--red)"></div><span>Baseline</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:#000;border-top:2px dashed #000;height:0"></div><span style="color:var(--bright)">Completed</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:var(--blue);border-top:2px dashed var(--blue);height:0"></div><span>Forecast</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:rgba(180,180,180,.45);height:10px;border-radius:2px"></div><span>Baseline (hrs)</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:rgba(63,191,127,.75);height:10px;border-radius:2px"></div><span>Actual (hrs)</span>
+        </div>
+        <div class="chart-legend-item">
+          <div class="leg-line" style="background:rgba(75,170,230,.75);height:10px;border-radius:2px"></div><span>Forecast (hrs)</span>
+        </div>
+        <div class="chart-legend-item" id="scurveSD" style="color:var(--amber)"></div>
+        <div class="chart-legend-item" id="scurveGap"></div>
+      </div>
+      <div id="scurveBox" style="position:relative;height:180px">
+        <canvas id="scurveCanvas"></canvas>
+      </div>
+    </div>
+  </div>
+  <!-- ══ CRITICAL WORKS ══ -->
+  <div id="tab-critical" class="tab-panel">
+    <div class="filter-row">
+      <input type="text" id="critSearch" placeholder="Search WO, header…" oninput="renderCritical()">
+      <select id="critTeam" onchange="renderCritical()"><option value="">All Teams</option></select>
+      <select id="critPct" onchange="renderCritical()">
+        <option value="">Any % Complete</option>
+        <option value="0">Not Started (0%)</option>
+        <option value="partial">In Progress</option>
+        <option value="100">Complete (100%)</option>
+      </select>
+      <select id="critCpct" onchange="renderCritical()">
+        <option value="">CP &amp; CT</option>
+        <option value="1">CP Only (Critical Path)</option>
+        <option value="2">CT Only (Critical Task)</option>
+      </select>
+    </div>
+    <div class="panel">
+      <div class="tbl-wrap"><table id="critTable"></table></div>
+    </div>
+  </div>
+  <!-- ══ VENDOR UPDATES ══ -->
+  <div id="tab-vendor" class="tab-panel">
+    <div class="panel vend-panel">
+      <div class="vend-head">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="panel-title" style="margin:0">Vendor Work Summary</div>
+          <select id="vendArea" class="vend-area" onchange="vendSetArea(this.value)" title="Filter by Executive Summary area"></select>
+          <span class="vend-sub" id="vendorSub"></span>
+        </div>
+        <div class="chart-legend" style="margin:0">
+          <div class="chart-legend-item"><div class="leg-line" style="background:rgba(75,170,230,.8);height:10px;border-radius:2px"></div><span>Current (forecast) hrs</span></div>
+          <div class="chart-legend-item"><div class="leg-line" style="background:rgba(63,191,127,.8);height:10px;border-radius:2px"></div><span>Actual hrs</span></div>
+          <div class="chart-legend-item" style="color:var(--muted)" id="vendScaleNote"></div>
+        </div>
+      </div>
+      <!-- one scroll area: table rows and chart bars line up -->
+      <div class="vend-scroll" id="vendScroll">
+        <div class="vend-grid">
+          <div class="vend-left"><table id="vendorTable"></table></div>
+          <div class="vend-right"><div id="vendorChartBox" style="position:relative"><canvas id="vendorCanvas"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ══ FIELD UPDATES ══ -->
+  <div id="tab-field" class="tab-panel">
+    <div class="filter-row">
+      <input type="text" id="fieldSearch" placeholder="Search team, WO, notes…" oninput="renderField()">
+      <select id="fieldTeam" onchange="renderField()"><option value="">All Teams</option></select>
+      <select id="fieldStatus" onchange="renderField()">
+        <option value="">All Status</option>
+        <option value="Completed">Completed</option>
+        <option value="Not Complete">Not Complete</option>
+      </select>
+    </div>
+    <div class="panel">
+      <div class="tbl-wrap"><table id="fieldTable"></table></div>
+    </div>
+  </div>
+  <!-- ══ OUTSTANDING (NOT YET UPDATED) ══ -->
+  <div id="tab-outstanding" class="tab-panel">
+    <div class="filter-row">
+      <input type="text" id="outSearch" placeholder="Search team, WO…" oninput="renderOutstanding()">
+      <select id="outTeam" onchange="renderOutstanding()"><option value="">All Teams</option></select>
+      <select id="outDueFilter" onchange="renderOutstanding()">
+        <option value="">Overdue &amp; Not Due</option>
+        <option value="overdue">Overdue Only</option>
+        <option value="notdue">Not Due Only</option>
+      </select>
+    </div>
+    <div class="panel mb12">
+      <div class="panel-title">Tasks Not Yet Updated</div>
+      <div style="font-family:var(--font-d);font-size:13px;color:var(--amber)" id="outstandingCount"></div>
+      <div class="out-summary-band" id="outstandingSummary"></div>
+    </div>
+    <div class="panel">
+      <div class="tbl-wrap"><table id="outstandingTable"></table></div>
+    </div>
+  </div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════
+// SITE + CONFIG
+// One page serves every dashboard for this client. The dashboard is
+// picked by ?site=d1 (d2, d3 …) and its settings come from
+// ../config/<site>.json  →  { "title": "…", "api": "<GAS /exec URL>" }
+// ══════════════════════════════════════════════════════════════
+const SITE = (new URLSearchParams(location.search).get('site') || '').trim().toLowerCase();
+let GAS_URL = '';
+let SITE_CFG = null;
+async function loadSiteConfig() {
+  if (!/^[a-z0-9_-]+$/.test(SITE)) throw new Error('No dashboard selected — open this page from the hub (missing ?site=).');
+  const r = await fetch('../config/' + SITE + '.json?t=' + Date.now());
+  if (!r.ok) throw new Error('No configuration found for dashboard "' + SITE + '".');
+  SITE_CFG = await r.json();
+  if (!SITE_CFG.api) throw new Error('Dashboard "' + SITE + '" has no API URL in its config.');
+  GAS_URL = SITE_CFG.api;
+  if (SITE_CFG.title) {
+    document.title = SITE_CFG.title;
+    const h = document.getElementById('hdrName'); if (h) h.textContent = SITE_CFG.title;
+  }
+}
+// ── STATE ─────────────────────────────────────────────────────
+let _exec = null, _gantt = null, _scurve = null, _field = null, _critical = null, _vendor = null;
+let _outDates = null;
+let _outDatesErr = null;
+let _fieldRowsFiltered = [];
+let _outstandingRowsFiltered = [];
+let _scurveChart = null;
+
+// ── TV / TOUCH-SCREEN MODE (?tv=1) ────────────────────────────
+const TV = /[?&]tv(=1|=true)?(&|$)/i.test(location.search);
+const FS = TV ? 1.35 : 1;                     // chart font scale
+if (TV) {
+  document.documentElement.classList.add('tv');
+  const stage = document.createElement('div');
+  stage.id = 'tvStage';
+  while (document.body.firstChild) stage.appendChild(document.body.firstChild);
+  document.body.appendChild(stage);
+  const fit = () => {
+    const k = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = `scale(${k})`;
+    stage.style.left = Math.max(0, (innerWidth  - 1920 * k) / 2) + 'px';
+    stage.style.top  = Math.max(0, (innerHeight - 1080 * k) / 2) + 'px';
+  };
+  addEventListener('resize', fit); fit();
+  const clock = () => {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    const el = document.getElementById('tvClock'); if (el) el.textContent = `${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+  clock(); setInterval(clock, 15000);
+  setInterval(() => loadAll(true), 5 * 60 * 1000);   // quiet auto-refresh every 5 min
+}
+function tvFullscreen() {
+  const el = document.documentElement;
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+}
+let _statusDate = null, _statusDateTxt = '', _statusDateSet = false;
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'vendor' && _vendor) requestAnimationFrame(renderVendorChart);
+}
+// ── FETCH ─────────────────────────────────────────────────────
+async function gas(action, extra) {
+  const url = GAS_URL + '?site=' + encodeURIComponent(SITE) + '&action=' + action + (extra || '') + '&t=' + Date.now();
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+function showErr(msg) {
+  const b = document.getElementById('errBanner');
+  b.textContent = msg;
+  b.style.display = 'block';
+}
+async function loadAll(quiet) {
+  if (!quiet) document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('errBanner').style.display = 'none';
+  try {
+    // outstandingdates is fetched separately and never allowed to throw —
+    // if it fails (e.g. new action not deployed yet, or a bad join), the
+    // rest of the dashboard must still load normally. Outstanding just
+    // falls back to showing no due-status badges.
+    const [meta, exec, gantt, scurve, field, critical, vendor] = await Promise.all([
+      gas('meta'), gas('exec'), gas('gantt'), gas('scurve'),
+      gas('fieldupdates'), gas('criticalworks'), gas('vendorupdates')
+    ]);
+    let outDates = null, outDatesErr = null;
+    try {
+      outDates = await gas('outstandingdates');
+    } catch(e2) {
+      outDatesErr = e2.message;
+    }
+    _exec = exec; _gantt = gantt; _scurve = scurve;
+    _field = field; _critical = critical; _vendor = vendor;
+    _outDates = outDates; _outDatesErr = outDatesErr;
+    applyMeta(meta);
+    renderExec();
+    renderGantt();
+    initScurve();
+    initCritical();
+    initVendor();
+    initField();
+    initOutstanding();
+  } catch(e) {
+    showErr('Error loading data: ' + e.message);
+  } finally {
+    document.getElementById('overlay').style.display = 'none';
+  }
+}
+// ── META ──────────────────────────────────────────────────────
+function applyMeta(m) {
+  if (m.shutdownName) {
+    document.getElementById('hdrName').textContent = m.shutdownName + ' — Dashboard';
+    document.getElementById('execShutdownName').textContent = m.shutdownName;
+    document.title = m.shutdownName;
+  }
+  _statusDateTxt = m.statusDate || '';
+  _statusDateSet = !!m.statusDateSet;
+  _statusDate = (m.statusDate && parseShutDate(m.statusDate)) || new Date();
+  const chip = document.getElementById('sdChip');
+  chip.textContent = 'Status date: ' + (m.statusDate || '—') + (m.statusDateSet ? '' : ' (not set)') + '  ✎';
+  chip.classList.toggle('unset', !m.statusDateSet);
+  if (m.lastUpload) {
+    document.getElementById('hdrUpload').textContent = 'Last upload: ' + m.lastUpload;
+  }
+  if (m.hoursAgo !== null && m.hoursAgo !== undefined) {
+    const el = document.getElementById('hdrAgo');
+    el.textContent = m.hoursAgo + ' Hrs Ago';
+    el.style.color = m.hoursAgo > 72 ? 'var(--red)' : m.hoursAgo > 24 ? 'var(--amber)' : 'var(--green)';
+  }
+}
+// ── HELPERS ───────────────────────────────────────────────────
+function pctCls(p) { return p >= 90 ? 'kv-green' : p >= 50 ? 'kv-amber' : 'kv-red'; }
+function fmtN(n, dp=2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (Math.round(n * Math.pow(10,dp)) / Math.pow(10,dp)).toFixed(dp);
+}
+function fmtN1(n) { return fmtN(n,1); }
+function fmtN0(n) { return fmtN(n,0); }
+function fvTag(fv) {
+  if (fv > 0) return `<span class="fv-pos">+${fmtN1(fv)}</span>`;
+  if (fv < 0) return `<span class="fv-neg">${fmtN1(fv)}</span>`;
+  return `<span class="fv-zero">0.0</span>`;
+}
+// Parse the "dd/MM/yy HH:mm" strings shutFmtDate() produces on the backend
+// back into a JS Date, so the Outstanding tab can compare against "now".
+function parseShutDate(str) {
+  if (!str) return null;
+  const parts = str.split(' ');
+  const dPart = parts[0], tPart = parts[1] || '00:00';
+  const dBits = dPart.split('/');
+  if (dBits.length !== 3) return null;
+  const [dd, mm, yy] = dBits;
+  const tBits = tPart.split(':');
+  const d = new Date(2000 + parseInt(yy,10), parseInt(mm,10) - 1, parseInt(dd,10), parseInt(tBits[0]||0,10), parseInt(tBits[1]||0,10));
+  return isNaN(d.getTime()) ? null : d;
+}
+// ── EXEC SUMMARY ─────────────────────────────────────────────
+function renderExec() {
+  const d = _exec;
+  if (!d || !d.kpis) return;
+  const { kpis, areas } = d;
+  // KPI band — always top-level rollup
+  const pc  = kpis.pctComplete || 0;
+  const ov  = kpis.forecastOverrun || 0;
+  const rw  = kpis.remainingWorkHours || 0;
+  document.getElementById('execKpiBand').innerHTML = `
+    <div class="kpi-cell">
+      <div class="kpi-cell-label" title="Actual Work ÷ Work (MS Project % Work Complete)">% Work Complete</div>
+      <div class="kpi-cell-value big kv-${workLvl(pc, kpis.targetPct)}">${pc}%</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-cell-label">Target (Baseline)</div>
+      <div class="kpi-cell-value big kv-white">
+        ${kpis.targetPct == null ? '—' : kpis.targetPct + '%'}</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-cell-label">Forecast Finish</div>
+      <div class="kpi-cell-value kv-white" style="font-size:16px">${kpis.forecastFinish || '—'}</div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-cell-label">Forecast Overrun</div>
+      <div class="kpi-cell-value ${ov > 0 ? 'kv-red' : ov < 0 ? 'kv-green' : 'kv-white'}">
+        ${ov > 0 ? '+' : ''}${fmtN1(ov)} Hrs
+      </div>
+    </div>
+    <div class="kpi-cell">
+      <div class="kpi-cell-label">Remaining Work Hours</div>
+      <div class="kpi-cell-value ${rw <= 0 ? 'kv-green' : 'kv-amber'}">
+        ${fmtN1(rw)} Hrs
+      </div>
+    </div>`;
+  // Populate area selector with all ES row names
+  const sel = document.getElementById('maintAreaSelect');
+  sel.innerHTML = (areas || []).map(a =>
+    `<option value="${a.name}">${a.name}</option>`
+  ).join('');
+  // Default to Maintenance Window row if present, else first
+  const mwOpt = (areas || []).find(a => /maintenance window/i.test(a.name));
+  if (mwOpt) sel.value = mwOpt.name;
+  renderMaintWindow();
+  // Area table
+  const cols = ['Area','% Work','Target','Duration','Completed Work','Total Work','Remaining Work','Start','Forecast Finish','Hrs to Critical','Finish Var'];
+  const tbody = (areas || []).map((a, idx) => {
+    const pc2 = a.pctComplete || 0;
+    const tagCls = 'tag-' + workLvl(pc2, a.targetPct);
+    const htc = a.hoursToCritical || 0;
+    return `<tr class="pd-click" onclick="pdShow(_exec.areas[${idx}].name)" title="Click for detail">
+      <td>${a.name}</td>
+      <td><span class="tag ${tagCls}">${pc2}%</span></td>
+      <td>${a.targetPct == null ? '—' : a.targetPct + '%'}</td>
+      <td>${fmtN1(a.duration)}</td>
+      <td>${fmtN(a.completedWork,2)}</td>
+      <td>${fmtN(a.totalWork,2)}</td>
+      <td>${fmtN(a.remainingWork,2)}</td>
+      <td>${a.start || '—'}</td>
+      <td>${a.forecastFinish || '—'}</td>
+      <td>${fmtN0(htc)}</td>
+      <td>${fvTag(a.finishVariance)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('areaTable').innerHTML =
+    `<thead><tr>${cols.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+     <tbody>${tbody || '<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No data</td></tr>'}</tbody>`;
+}
+function renderMaintWindow() {
+  const d = _exec;
+  if (!d || !d.areas) return;
+  const selName = document.getElementById('maintAreaSelect').value;
+  const area = d.areas.find(a => a.name === selName) || d.areas[0];
+  if (!area) return;
+  const ov = area.finishVariance || 0;
+  document.getElementById('maintFields').innerHTML = `
+    <div class="maint-field">
+      <div class="maint-field-label">Start</div>
+      <div class="maint-field-value">${area.start || '—'}</div>
+    </div>
+    <div class="maint-field">
+      <div class="maint-field-label">Finish</div>
+      <div class="maint-field-value">${area.forecastFinish || '—'}</div>
+    </div>
+    <div class="maint-field">
+      <div class="maint-field-label">Work Hours</div>
+      <div class="maint-field-value">${fmtN0(area.totalWork)} Hrs</div>
+    </div>
+    <div class="maint-field">
+      <div class="maint-field-label">Completed</div>
+      <div class="maint-field-value">${fmtN0(area.completedWork)} Hrs</div>
+    </div>
+    <div class="maint-field">
+      <div class="maint-field-label">Overrun</div>
+      <div class="maint-field-value ${ov > 0 ? 'amber' : ov < 0 ? 'green' : ''}">
+        ${ov > 0 ? '+' : ''}${fmtN1(ov)} Hrs
+      </div>
+    </div>
+    <div class="maint-field">
+      <div class="maint-field-label">% Complete</div>
+      <div class="maint-field-value ${workLvl(area.pctComplete || 0, area.targetPct)}">
+        ${area.pctComplete || 0}%
+      </div>
+    </div>`;
+}
+// Target colouring: on/ahead = green, up to 10 points behind = amber, more = red
+function tgtCls(pc, tg) {
+  if (tg === null || tg === undefined) return '';
+  const gap = pc - tg;
+  return gap >= 0 ? 'tgt-ok' : gap >= -5 ? 'tgt-warn' : 'tgt-bad';
+}
+// % Work colour against its target: green = on/above target, amber = up to 5 points below, red = more than 5 below.
+// Without a target, falls back to the old % bands.
+function workLvl(pc, tg) {
+  if (tg === null || tg === undefined) return pc >= 90 ? 'green' : pc >= 50 ? 'amber' : 'red';
+  const gap = pc - tg;
+  return gap >= 0 ? 'green' : gap >= -5 ? 'amber' : 'red';
+}
+// ── GANTT ─────────────────────────────────────────────────────
+function renderGantt() {
+  const d = _gantt;
+  if (!d || !d.areas || d.areas.length === 0) return;
+  const maxHrs = d.areas.reduce((m, a) =>
+    Math.max(m, a.startOffset + a.completed + a.remaining), 1);
+  document.getElementById('ganttChart').innerHTML = d.areas.map((a, idx) => {
+    const offPct  = (a.startOffset / maxHrs * 100).toFixed(2);
+    const donePct = (a.completed   / maxHrs * 100).toFixed(2);
+    const remPct  = (a.remaining   / maxHrs * 100).toFixed(2);
+    const restPct = Math.max(0, 100 - parseFloat(offPct) - parseFloat(donePct) - parseFloat(remPct)).toFixed(2);
+    const tg = (typeof a.targetPct === 'number') ? a.targetPct : null;
+    const tgLeft = tg === null ? null : ((a.startOffset + (a.completed + a.remaining) * tg / 100) / maxHrs * 100).toFixed(2);
+    return `<div class="gantt-row pd-click" onclick="pdShow(_gantt.areas[${idx}].name)" title="Click for detail">
+      <div class="gantt-label" title="${a.name}">${a.name}</div>
+      <div class="gantt-track">
+        <div class="gantt-offset" style="flex:${offPct}"></div>
+        <div class="gantt-done"   style="flex:${donePct}"></div>
+        <div class="gantt-rem"    style="flex:${remPct}"></div>
+        <div style="flex:${restPct}"></div>
+        ${tgLeft === null ? '' : `<div class="gantt-target" style="left:${tgLeft}%" title="Target ${tg}%"></div>`}
+      </div>
+      <div class="gantt-pct">${tg === null ? `${a.pctComplete}%`
+        : `<b class="${tgtCls(a.pctComplete, tg)}">${a.pctComplete}%</b> / ${tg}%`}</div>
+    </div>`;
+  }).join('');
+}
+// ── S-CURVE ───────────────────────────────────────────────────
+function initScurve() {
+  const d = _scurve;
+  if (!d || !d.areas) return;
+  const sel = document.getElementById('scurveArea');
+  sel.innerHTML = d.areas.map(a => `<option value="${a}">${a}</option>`).join('');
+  renderScurve();
+}
+function renderScurve() {
+  // Lines are percentages:
+  //   Baseline  = cumulative baseline work ÷ total baseline work
+  //   Completed = cumulative actual work   ÷ total FORECAST work (to the status date)
+  //   Forecast  = the current schedule's cumulative Work ÷ total forecast work → ends at 100%.
+  //               Where the schedule has been statused properly it sits on Completed;
+  //               work left in past periods (not updated / not rescheduled) shows as a gap.
+  // Bars are hours per period: Baseline, plus Actual up to the status date and Forecast after it.
+  const d = _scurve;
+  if (!d || !d.series) return;
+  const area = document.getElementById('scurveArea').value;
+  const s = d.series[area];
+  if (!s) return;
+  const { labels, work, actual, baseline } = s;
+  const n = labels.length;
+  const last = a => (a && a.length ? a[a.length - 1] : 0);
+  const TW = s.totalWork || last(work) || 1;
+  const TB = s.totalBaseline || last(baseline) || 1;
+  const TA = s.totalActual != null ? s.totalActual : last(actual);
+  const idx = (typeof s.statusIndex === 'number') ? s.statusIndex
+            : (typeof s.nowIndex === 'number') ? s.nowIndex : n - 1;
+  const pc = (v, t) => Math.round(v / t * 1000) / 10;
+
+  const basePct = baseline.map(v => pc(v, TB));
+  // actual booked after the status date is counted at the status date
+  const compHrs = actual.map((v, i) => i < idx ? v : i === idx ? TA : null);
+  const compPct = compHrs.map(v => v === null ? null : pc(v, TW));
+  const fcHrs = work.map(v => Math.round(v * 10) / 10);
+  const fcPct = fcHrs.map(v => pc(v, TW));
+
+  // Gap at the status date: work the schedule shows before the status date
+  // that has no actual against it (not updated, or not rescheduled forward)
+  const gapHrs = idx >= 0 ? Math.max(0, work[idx] - TA) : 0;
+  const gapPct = pc(gapHrs, TW);
+  const aheadHrs = idx >= 0 ? Math.max(0, TA - work[idx]) : 0;   // actuals beyond the schedule to date
+  const aheadPct = pc(aheadHrs, TW);
+  const gapEl = document.getElementById('scurveGap');
+  if (gapEl) {
+    gapEl.title = '';
+    if (idx < 0) { gapEl.textContent = ''; }
+    else if (aheadPct >= 1) {
+      gapEl.className = 'chart-legend-item gap-warn';
+      gapEl.textContent = `Actual ahead of schedule by ${fmtN0(aheadHrs)} hrs (${aheadPct}%) — early completions not brought back`;
+      gapEl.title = 'Actual work exceeds the scheduled work to the status date. Move work completed early back to when it was done.';
+    }
+    else if (gapPct < 1) {
+      gapEl.className = 'chart-legend-item gap-ok';
+      gapEl.textContent = '✓ Schedule statused — no gap at status date';
+    } else {
+      gapEl.className = 'chart-legend-item ' + (gapPct >= 5 ? 'gap-bad' : 'gap-warn');
+      gapEl.textContent = `Gap at Status Date: ${fmtN0(gapHrs)} hrs (${gapPct}%)`;
+      gapEl.title = 'Hours the schedule shows before the status date with no actual work booked. ' +
+        'Reschedule unstarted work to its forecast date and bring early completions back to when they were done to close the gap.';
+    }
+  }
+
+  const baseBar = s.baselineBar || labels.map(() => 0);
+  const actBar  = (s.actualBar || labels.map(() => 0)).map((v, i) => i <= idx ? v : null);
+  // after the status date: forecast (current schedule) work per period, in the same slot as Actual
+  const fcBar   = (s.workBar || labels.map(() => 0)).map((v, i) => i > idx ? v : null);
+
+  const sdEl = document.getElementById('scurveSD');
+  if (sdEl) sdEl.textContent = 'Status date: ' + (_statusDateTxt || (d.statusDate || '—')) +
+    (_statusDateSet ? '' : ' (not set)');
+
+  const step = Math.ceil(n / 18);
+  const sparseLabels = labels.map((l, i) => i % step === 0 ? l : '');
+  const hrsOf = { 'Baseline': baseline, 'Completed': compHrs, 'Forecast': fcHrs };
+  const ctx = document.getElementById('scurveCanvas').getContext('2d');
+  if (_scurveChart) _scurveChart.destroy();
+  _scurveChart = new Chart(ctx, {
+    data: {
+      labels: sparseLabels,
+      datasets: [
+        {
+          type: 'bar', label: 'Baseline (hrs)', data: baseBar, stack: 'base',
+          backgroundColor: 'rgba(180,180,180,.45)', borderColor: 'transparent',
+          yAxisID: 'yHrs', order: 6, barPercentage: 0.9, categoryPercentage: 0.8,
+        },
+        {
+          type: 'bar', label: 'Actual (hrs)', data: actBar, stack: 'now',
+          backgroundColor: 'rgba(63,191,127,.75)', borderColor: 'transparent',
+          yAxisID: 'yHrs', order: 5, barPercentage: 0.9, categoryPercentage: 0.8,
+        },
+        {
+          type: 'bar', label: 'Forecast (hrs)', data: fcBar, stack: 'now',
+          backgroundColor: 'rgba(75,170,230,.75)', borderColor: 'rgba(75,170,230,1)', borderWidth: 1,
+          yAxisID: 'yHrs', order: 4, barPercentage: 0.9, categoryPercentage: 0.8,
+        },
+        {
+          type: 'line', label: 'Baseline', data: basePct,
+          borderColor: '#e05555', backgroundColor: 'transparent',
+          borderWidth: 2, pointRadius: 0, tension: 0.4,
+          yAxisID: 'yPct', order: 1,
+        },
+        {
+          type: 'line', label: 'Completed', data: compPct,
+          borderColor: '#000000', backgroundColor: 'transparent',
+          borderWidth: 3, borderDash: [6,3], pointRadius: 0, tension: 0.3,
+          spanGaps: false, yAxisID: 'yPct', order: 2,
+        },
+        {
+          type: 'line', label: 'Forecast', data: fcPct,
+          borderColor: '#4b8ef5', backgroundColor: 'transparent',
+          borderWidth: 2, borderDash: [4,4], pointRadius: 0, tension: 0.3,
+          spanGaps: false, yAxisID: 'yPct', order: 3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2330', borderColor: '#2a3444', borderWidth: 1,
+          titleColor: '#b8c9e0', bodyColor: '#b8c9e0',
+          callbacks: {
+            title: items => items.length ? labels[items[0].dataIndex] : '',
+            label: ctx => {
+              if (ctx.raw === null || ctx.raw === undefined) return null;
+              if (ctx.dataset.yAxisID === 'yPct') {
+                const h = hrsOf[ctx.dataset.label][ctx.dataIndex];
+                const of = ctx.dataset.label === 'Baseline' ? ' of baseline' : ' of forecast';
+                return ` ${ctx.dataset.label}: ${ctx.raw}%${of} (${fmtN0(h)} hrs)`;
+              }
+              return ` ${ctx.dataset.label}: ${ctx.raw} hrs`;
+            }
+          }
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: '#4d6080', font: { size: 10 * FS }, maxRotation: 45 },
+          grid:  { color: 'rgba(42,52,68,.4)' },
+        },
+        yPct: {
+          type: 'linear', position: 'left', min: 0, max: 100,
+          ticks: { color: '#4d6080', font: { size: 11 * FS }, stepSize: 20, callback: v => v + '%' },
+          grid: { color: 'rgba(42,52,68,.4)' },
+        },
+        yHrs: {
+          type: 'linear', position: 'right', min: 0, stacked: true,
+          ticks: { color: '#4d6080', font: { size: 11 * FS }, callback: v => v + ' Hrs' },
+          grid: { drawOnChartArea: false },
+        },
+      },
+    },
+  });
+}
+// ── VENDOR UPDATES ────────────────────────────────────────────
+let _vendorChart = null;
+let _vendSort = { key: 'team', dir: 1 };
+let _vendArea = -1;                                   // -1 = all areas, else index into _vendor.areas
+function vendList() {
+  const d = _vendor || {};
+  return (_vendArea >= 0 && d.byArea && d.byArea[_vendArea]) ? d.byArea[_vendArea] : (d.vendors || []);
+}
+function vendSetArea(v) {
+  _vendArea = parseInt(v, 10);
+  if (isNaN(_vendArea)) _vendArea = -1;
+  renderVendorTable(); renderVendorChart();
+}
+const VEND_COLS = [
+  { key: 'team',      label: 'Vendor',          align: 'left'  },
+  { key: 'planned',   label: 'Planned Work',    align: 'right', hrs: true },
+  { key: 'current',   label: 'Current Work',    align: 'right', hrs: true },
+  { key: 'actual',    label: 'Actual Work',     align: 'right', hrs: true },
+  { key: 'targetPct', label: 'Target %',        align: 'right' },
+  { key: 'actualPct', label: 'Actual %',        align: 'right' },
+  { key: 'variance',  label: 'Variance',        align: 'right' },
+  { key: 'tasks',     label: 'Total Tasks',     align: 'right' },
+];
+function vendSorted() {
+  const k = _vendSort.key, d = _vendSort.dir;
+  return vendList().slice().sort((a, b) =>
+    k === 'team' ? d * a.team.localeCompare(b.team) : d * ((a[k] || 0) - (b[k] || 0)) || a.team.localeCompare(b.team));
+}
+function vendSortBy(k) {
+  _vendSort = _vendSort.key === k ? { key: k, dir: -_vendSort.dir } : { key: k, dir: k === 'team' ? 1 : (k === 'variance' ? 1 : -1) };
+  renderVendorTable(); renderVendorChart();
+}
+function initVendor() {
+  const d = _vendor;
+  if (!d || !d.vendors) return;
+  const sel = document.getElementById('vendArea');
+  const areas = d.areas || [];
+  if (_vendArea >= areas.length) _vendArea = -1;
+  sel.innerHTML = '<option value="-1">Executive Summary: All areas</option>' +
+    areas.map((a, i) => `<option value="${i}">${pdEsc(a)}</option>`).join('');
+  sel.value = String(_vendArea);
+  sel.style.display = areas.length ? '' : 'none';
+  renderVendorTable();
+  renderVendorChart();
+}
+function renderVendorTable() {
+  const d = _vendor;
+  if (!d || !d.vendors) return;
+  document.getElementById('vendorSub').textContent =
+    'Target % and Actual % at status date ' + (d.statusDate || _statusDateTxt || '') +
+    (d.hasBaseline === false ? ' · no Baseline Work (BW) column found' : '');
+  const arrow = k => _vendSort.key === k ? (_vendSort.dir > 0 ? ' ▲' : ' ▼') : '';
+  const head = VEND_COLS.map(c => `<th style="text-align:${c.align}" onclick="vendSortBy('${c.key}')" title="Sort">${c.label}${arrow(c.key)}</th>`).join('');
+  const varCls = v => v >= 0 ? 'tgt-ok' : v >= -10 ? 'tgt-warn' : 'tgt-bad';
+  const rows = vendSorted();
+  const tot = rows.reduce((t, v) => { t.planned += v.planned; t.current += v.current; t.actual += v.actual; t.tasks += v.tasks; return t; },
+                          { planned: 0, current: 0, actual: 0, tasks: 0 });
+  const body = rows.map(v => `<tr class="pd-click" onclick="vendShow(${JSON.stringify(v.team).replace(/"/g, '&quot;')})" title="Click for this vendor's work orders">
+    <td style="text-align:left">${pdEsc(v.team)}</td>
+    <td style="text-align:right">${fmtN1(v.planned)}</td>
+    <td style="text-align:right">${fmtN1(v.current)}</td>
+    <td style="text-align:right">${fmtN1(v.actual)}</td>
+    <td style="text-align:right;color:var(--muted)">${v.targetPct.toFixed(1)}%</td>
+    <td style="text-align:right"><span class="${varCls(v.variance)}">${v.actualPct.toFixed(1)}%</span></td>
+    <td style="text-align:right"><b class="${varCls(v.variance)}">${v.variance > 0 ? '+' : ''}${v.variance.toFixed(1)}</b></td>
+    <td style="text-align:right">${v.tasks}</td>
+  </tr>`).join('');
+  const foot = `<tr style="border-top:2px solid var(--border)">
+    <td style="text-align:left;color:var(--muted)">Total (${rows.length} vendors)</td>
+    <td style="text-align:right;color:var(--bright)">${fmtN1(tot.planned)}</td>
+    <td style="text-align:right;color:var(--bright)">${fmtN1(tot.current)}</td>
+    <td style="text-align:right;color:var(--bright)">${fmtN1(tot.actual)}</td>
+    <td></td><td></td><td></td>
+    <td style="text-align:right;color:var(--bright)">${tot.tasks}</td></tr>`;
+  document.getElementById('vendorTable').innerHTML =
+    `<thead><tr>${head}</tr></thead><tbody>${body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No data</td></tr>`}${rows.length ? foot : ''}</tbody>`;
+}
+function renderVendorChart() {
+  const d = _vendor;
+  if (!d || !d.vendors) return;
+  const rows = vendSorted();
+  const tbl = document.getElementById('vendorTable');
+  const box = document.getElementById('vendorChartBox');
+  const tab = document.getElementById('tab-vendor');
+  // measure the table so each vendor's bars sit level with its row (tab must be visible to measure)
+  const measure = () => {
+    const th = tbl.querySelector('thead'), tr = tbl.querySelector('tbody tr');
+    return { head: th ? th.offsetHeight : 34, row: tr ? tr.offsetHeight : 31 };
+  };
+  if (!tab.classList.contains('active')) { _vendPending = true; return; }
+  _vendPending = false;
+  const m = measure();
+  const max = Math.max(1, ...rows.map(v => Math.max(v.current || 0, v.actual || 0)));
+  // sticky scale header the same height as the table header
+  let axis = box.parentElement.querySelector('.vend-axis');
+  if (!axis) { axis = document.createElement('div'); axis.className = 'vend-axis'; box.parentElement.insertBefore(axis, box); }
+  axis.style.height = m.head + 'px'; axis.style.alignItems = 'center';
+  const ticks = [0, .25, .5, .75, 1].map(f => fmtN0(max * f) + ' h');
+  axis.innerHTML = ticks.map(t => `<span>${t}</span>`).join('');
+  box.style.height = (rows.length * m.row) + 'px';
+  document.getElementById('vendScaleNote').textContent = 'Bars line up with the table rows';
+  const ctx = document.getElementById('vendorCanvas').getContext('2d');
+  if (_vendorChart) _vendorChart.destroy();
+  _vendorChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rows.map(v => v.team),
+      datasets: [
+        { label: 'Current', data: rows.map(v => v.current), backgroundColor: 'rgba(75,170,230,.8)', borderColor: 'transparent',
+          barPercentage: 0.8, categoryPercentage: 0.75 },
+        { label: 'Actual', data: rows.map(v => v.actual), backgroundColor: 'rgba(63,191,127,.8)', borderColor: 'transparent',
+          barPercentage: 0.8, categoryPercentage: 0.75 },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false, animation: false,
+      layout: { padding: { left: 10, right: 10, top: 0, bottom: 0 } },
+      // horizontal bars: pick the vendor by the row under the pointer (y), not by x position
+      interaction: { mode: 'index', axis: 'y', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2330', borderColor: '#2a3444', borderWidth: 1, titleColor: '#b8c9e0', bodyColor: '#b8c9e0',
+          callbacks: {
+            label: c => ` ${c.dataset.label}: ${fmtN1(c.raw)} hrs`,
+            afterBody: items => { const v = rows[items[0].dataIndex]; return v && v.current ? [` Actual % of current: ${v.actualPct.toFixed(1)}%`] : []; },
+          },
+        },
+      },
+      scales: {
+        x: { display: false, min: 0, max },
+        y: { display: false, offset: true },
+      },
+    },
+  });
+}
+let _vendPending = false;
+// ── CRITICAL WORKS ────────────────────────────────────────────
+function initCritical() {
+  const d = _critical;
+  if (!d || !d.rows) return;
+  const sel = document.getElementById('critTeam');
+  sel.innerHTML = '<option value="">All Teams</option>' +
+    (d.teams || []).map(t => `<option value="${t}">${t}</option>`).join('');
+  renderCritical();
+}
+function renderCritical() {
+  const d = _critical;
+  if (!d || !d.rows) return;
+  const search  = (document.getElementById('critSearch').value || '').toLowerCase();
+  const team    = document.getElementById('critTeam').value;
+  const pctFil  = document.getElementById('critPct').value;
+  const cpctFil = document.getElementById('critCpct').value;
+  let rows = d.rows.filter(r => {
+    if (team    && r.team !== team)              return false;
+    if (cpctFil && r.cpct !== parseFloat(cpctFil)) return false;
+    if (pctFil === '0'       && r.pctComplete !== 0)                           return false;
+    if (pctFil === '100'     && r.pctComplete !== 100)                         return false;
+    if (pctFil === 'partial' && (r.pctComplete === 0 || r.pctComplete === 100)) return false;
+    if (search) {
+      const hay = [r.workOrder, r.wo, r.team, r.start, r.finish].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+  const cols = [
+    { label: 'CP',        align: 'center' },
+    { label: 'WBS / WO',  align: 'center' },
+    { label: 'Description', align: 'left' },
+    { label: 'PSD',       align: 'left'   },
+    { label: 'PFD',       align: 'left'   },
+    { label: '%',         align: 'center' },
+    { label: 'TS',        align: 'center' },
+  ];
+  const cpDot = cpct => {
+    if (cpct === 1) return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--red);margin-right:5px;vertical-align:middle"></span>CP';
+    if (cpct === 2) return '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--amber);margin-right:5px;vertical-align:middle"></span>CT';
+    return '—';
+  };
+  const pctCls = p => p >= 100 ? 'tag-green' : p > 0 ? 'tag-amber' : 'tag-red';
+  const tHead = cols.map(c => `<th style="text-align:${c.align}">${c.label}</th>`).join('');
+  const tBody = rows.map(r => `<tr class="pd-click" onclick="critShow(${JSON.stringify(String(r.workOrder || '')).replace(/"/g, '&quot;')})" title="Click for the tasks in this work order">
+    <td style="text-align:center">${cpDot(r.cpct)}</td>
+    <td style="text-align:center;font-family:var(--font-d)">${r.workOrder || '—'}</td>
+    <td style="text-align:left">${r.wo || '—'}</td>
+    <td style="text-align:left;font-family:var(--font-d)">${r.start || '—'}</td>
+    <td style="text-align:left;font-family:var(--font-d)">${r.finish || '—'}</td>
+    <td style="text-align:center"><span class="tag ${pctCls(r.pctComplete)}">${r.pctComplete}%</span></td>
+    <td style="text-align:center;font-family:var(--font-d)">${r.totalSlack}</td>
+  </tr>`).join('');
+  document.getElementById('critTable').innerHTML =
+    `<thead><tr>${tHead}</tr></thead>` +
+    `<tbody>${tBody || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No critical works found</td></tr>`}</tbody>`;
+}
+// ── FIELD UPDATES ─────────────────────────────────────────────
+function initField() {
+  const d = _field;
+  if (!d || !d.rows) return;
+  const headers = d.headers;
+  const iApp = headers.indexOf('App');
+  // Only carry rows through where the App% column is > 0
+  _fieldRowsFiltered = d.rows.filter(r => {
+    const v = parseFloat(String(r[iApp]).replace('%', ''));
+    return !isNaN(v) && v > 0;
+  });
+  // Team is always first column (index 0)
+  const teams = [...new Set(_fieldRowsFiltered.map(r => r[0]).filter(Boolean))].sort();
+  const sel = document.getElementById('fieldTeam');
+  sel.innerHTML = '<option value="">All Teams</option>' +
+    teams.map(t => `<option value="${t}">${t}</option>`).join('');
+  renderField();
+}
+function renderField() {
+  const d = _field;
+  if (!d || !d.rows) return;
+  const search = (document.getElementById('fieldSearch').value || '').toLowerCase();
+  const team   = document.getElementById('fieldTeam').value;
+  const status = document.getElementById('fieldStatus').value;
+  const headers = d.headers; // colloquial labels from GAS
+  // Known column positions by label
+  const iTeam   = headers.indexOf('Team');
+  const iStatus = headers.indexOf('Upload Status');
+  const iNotes  = headers.indexOf('Field Notes');
+  const iProj   = headers.indexOf('Project');
+  const iApp    = headers.indexOf('App');
+  let rows = _fieldRowsFiltered.filter(r => {
+    if (team   && r[iTeam]   !== team)   return false;
+    if (status && iStatus >= 0 && r[iStatus] !== status) return false;
+    if (search && !r.join(' ').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const tHead = headers.map(h => `<th style="text-align:left">${h}</th>`).join('');
+  const tBody = rows.slice(0, 500).map(r => {
+    return '<tr>' + r.map((val, ci) => {
+      const isStatus = ci === iStatus;
+      const isNotes  = ci === iNotes;
+      const isPct    = ci === iProj || ci === iApp;
+      if (isStatus) {
+        const cls = val === 'Completed' ? 'badge-done' : 'badge-pend';
+        return `<td><span class="badge ${cls}">${val || '—'}</span></td>`;
+      }
+      if (isNotes && val) {
+        return `<td class="notes-cell">${val}</td>`;
+      }
+      if (isPct) {
+        return `<td style="text-align:left;font-family:var(--font-d)">${val || '—'}</td>`;
+      }
+      return `<td style="text-align:left">${val || '—'}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+  document.getElementById('fieldTable').innerHTML =
+    `<thead><tr>${tHead}</tr></thead>` +
+    `<tbody>${tBody || `<tr><td colspan="${headers.length}" style="text-align:center;color:var(--muted);padding:20px">No results</td></tr>`}</tbody>`;
+}
+// ── OUTSTANDING (NOT YET UPDATED) ──────────────────────────────
+// Mirror of Field Updates, but inverted: shows exactly the rows the
+// Field Updates tab silently drops (App% missing, blank, or 0).
+// This is the punch list for "what has nobody touched yet."
+//
+// Additive: each row is also joined (client-side) against the
+// outstandingdates lookup (Work Order + Task Number -> Planned Start)
+// to add an Overdue / Not Due badge and a count summary, without
+// changing any existing Field Updates logic or GAS action.
+function initOutstanding() {
+  const d = _field;
+  if (!d || !d.rows) return;
+  const headers = d.headers;
+  const iApp = headers.indexOf('App');
+  _outstandingRowsFiltered = d.rows.filter(r => {
+    const v = parseFloat(String(r[iApp]).replace('%', ''));
+    return isNaN(v) || v <= 0;
+  });
+  const teams = [...new Set(_outstandingRowsFiltered.map(r => r[0]).filter(Boolean))].sort();
+  const sel = document.getElementById('outTeam');
+  sel.innerHTML = '<option value="">All Teams</option>' +
+    teams.map(t => `<option value="${t}">${t}</option>`).join('');
+  renderOutstanding();
+}
+// Returns { planStartStr, dueState } for a row, where dueState is
+// 'overdue' | 'notdue' | 'unknown' (no matching Planned Start found).
+function outstandingDueInfo(row, iWO, iTask) {
+  const lookup = (_outDates && _outDates.lookup) || {};
+  const wo   = parseFloat(String(row[iWO]).trim());
+  const task = parseFloat(String(row[iTask]).trim());
+  if (isNaN(wo) || isNaN(task)) return { planStartStr: '', dueState: 'unknown' };
+  const key = wo + '|' + task;
+  const planStartStr = lookup[key] || '';
+  if (!planStartStr) return { planStartStr: '', dueState: 'unknown' };
+  const planDate = parseShutDate(planStartStr);
+  if (!planDate) return { planStartStr, dueState: 'unknown' };
+  const dueState = planDate <= new Date() ? 'overdue' : 'notdue';
+  return { planStartStr, dueState };
+}
+function renderOutstanding() {
+  const d = _field;
+  if (!d || !d.rows) return;
+  const search   = (document.getElementById('outSearch').value || '').toLowerCase();
+  const team     = document.getElementById('outTeam').value;
+  const dueFilter = document.getElementById('outDueFilter').value;
+  const headers  = d.headers;
+  const iTeam = headers.indexOf('Team');
+  const iWO   = headers.indexOf('Work Order');
+  const iTask = headers.indexOf('Task');
+
+  let rows = _outstandingRowsFiltered.filter(r => {
+    if (team   && r[iTeam] !== team) return false;
+    if (search && !r.join(' ').toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Attach due info once per row (used for both filtering and rendering)
+  const rowsWithDue = rows.map(r => ({ r, due: outstandingDueInfo(r, iWO, iTask) }));
+
+  const filteredByDue = rowsWithDue.filter(({ due }) => {
+    if (dueFilter === 'overdue') return due.dueState === 'overdue';
+    if (dueFilter === 'notdue')  return due.dueState === 'notdue';
+    return true;
+  });
+
+  // Count summary — computed from the team/search-filtered set (not the due filter),
+  // so the summary always shows the full breakdown regardless of which due filter is active.
+  let overdueCount = 0, notDueCount = 0, unknownCount = 0;
+  rowsWithDue.forEach(({ due }) => {
+    if (due.dueState === 'overdue') overdueCount++;
+    else if (due.dueState === 'notdue') notDueCount++;
+    else unknownCount++;
+  });
+
+  document.getElementById('outstandingCount').textContent =
+    rows.length + ' of ' + d.rows.length + ' total task rows have not been updated (App % = 0 or blank)';
+
+  if (_outDatesErr) {
+    document.getElementById('outstandingSummary').innerHTML =
+      `<div style="color:var(--muted);font-size:12px;padding:6px 0">
+        Overdue / Not Due split unavailable right now (${_outDatesErr}). Everything else on this dashboard is unaffected.
+      </div>`;
+    document.getElementById('outstandingTable').innerHTML =
+      `<thead><tr>${headers.map(h => `<th style="text-align:left">${h}</th>`).join('')}</tr></thead>` +
+      `<tbody>${rows.slice(0,500).map(r => '<tr>' + r.map(val => `<td style="text-align:left">${val || '—'}</td>`).join('') + '</tr>').join('') ||
+        `<tr><td colspan="${headers.length}" style="text-align:center;color:var(--muted);padding:20px">All tasks have been updated</td></tr>`}</tbody>`;
+    return;
+  }
+
+  document.getElementById('outstandingSummary').innerHTML = `
+    <div class="out-summary-cell">
+      <div class="out-summary-label">Overdue</div>
+      <div class="out-summary-value" style="color:var(--red)">${overdueCount}</div>
+    </div>
+    <div class="out-summary-cell">
+      <div class="out-summary-label">Not Due Yet</div>
+      <div class="out-summary-value" style="color:var(--blue)">${notDueCount}</div>
+    </div>
+    <div class="out-summary-cell">
+      <div class="out-summary-label">No Planned Date Found</div>
+      <div class="out-summary-value" style="color:var(--muted)">${unknownCount}</div>
+    </div>`;
+
+  const tHead = '<th style="text-align:left">' + headers[iTeam] + '</th>' +
+    '<th style="text-align:center">Status</th>' +
+    '<th style="text-align:left">Planned Start</th>' +
+    headers.filter((h, ci) => ci !== iTeam).map(h => `<th style="text-align:left">${h}</th>`).join('');
+
+  const otherIdxs = headers.map((h, ci) => ci).filter(ci => ci !== iTeam);
+
+  const tBody = filteredByDue.slice(0, 500).map(({ r, due }) => {
+    let statusBadge = '<span class="tag" style="color:var(--muted);background:rgba(77,96,128,.12)">Unknown</span>';
+    if (due.dueState === 'overdue') statusBadge = '<span class="tag tag-red">Overdue</span>';
+    else if (due.dueState === 'notdue') statusBadge = '<span class="tag tag-blue">Not Due</span>';
+    return '<tr>' +
+      `<td style="text-align:left">${r[iTeam] || '—'}</td>` +
+      `<td style="text-align:center">${statusBadge}</td>` +
+      `<td style="text-align:left;font-family:var(--font-d)">${due.planStartStr || '—'}</td>` +
+      otherIdxs.map(ci => `<td style="text-align:left">${r[ci] || '—'}</td>`).join('') +
+    '</tr>';
+  }).join('');
+
+  document.getElementById('outstandingTable').innerHTML =
+    `<thead><tr>${tHead}</tr></thead>` +
+    `<tbody>${tBody || `<tr><td colspan="${headers.length + 2}" style="text-align:center;color:var(--muted);padding:20px">All tasks have been updated</td></tr>`}</tbody>`;
+}
+// ── BOOT ──────────────────────────────────────────────────────
+loadSiteConfig().then(() => loadAll()).catch(e => showErr(e.message));
+</script>
+
+<!-- ══ PACKAGE DRILL-DOWN POP-UP (added — self-contained) ══ -->
+<div class="pd-bg" id="sdModal" onclick="if(event.target===this)sdClose()">
+  <div class="pd-modal" role="dialog" aria-modal="true" style="max-width:380px">
+    <div class="pd-head">
+      <div><div class="pd-eyebrow">Scheduler</div><div class="pd-title">Set status date</div></div>
+      <button class="pd-close" onclick="sdClose()" aria-label="Close">×</button>
+    </div>
+    <div class="pd-body">
+      <div class="sd-row">
+        <div><label for="sdDay">Status date (as set in MS Project)</label>
+          <div style="display:flex;gap:6px">
+            <input type="date" id="sdDay" style="flex:1">
+            <select id="sdHour" title="Hour (24-hour)" style="width:74px"></select>
+            <select id="sdMin" title="Minutes" style="width:74px"></select>
+          </div></div>
+        <div><label for="sdPin">Scheduler PIN</label><input type="password" id="sdPin" inputmode="numeric" autocomplete="off"></div>
+      </div>
+      <div class="sd-msg" id="sdMsg"></div>
+      <div class="sd-actions"><button class="btn" onclick="sdClose()">Cancel</button><button class="btn" id="sdSave" onclick="sdSave()" style="border-color:var(--amber);color:var(--amber)">Save</button></div>
+    </div>
+  </div>
+</div>
+<div class="pd-bg" id="pdModal" onclick="if(event.target===this)pdClose()">
+  <div class="pd-modal" role="dialog" aria-modal="true" aria-labelledby="pdTitle">
+    <div class="pd-head">
+      <div><div class="pd-eyebrow" id="pdEyebrow">Executive Summary</div><div class="pd-title" id="pdTitle"></div></div>
+      <button class="pd-close" onclick="pdClose()" aria-label="Close">×</button>
+    </div>
+    <div class="pd-body" id="pdBody"></div>
+  </div>
+</div>
+<script>
+// Notes and task detail come from the GAS backend (action=pdrows),
+// fetched only when a row is first clicked (cached; cleared by ↻ Refresh).
+// Tasks beneath an area are found by WBS (children of the area's WBS code).
+let _pdRows = null, _pdLoading = null, _pdErr = null;
+
+function pdEsc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function pdNorm(s){ return String(s || '').trim().toLowerCase(); }
+function pdDelay(h){ if (h < 48) return fmtN1(h) + ' h'; const d = Math.floor(h/24); return d + 'd ' + Math.round(h - d*24) + 'h'; }
+
+function pdFetch(){
+  if (_pdRows) return Promise.resolve(_pdRows);
+  if (_pdLoading) return _pdLoading;
+  _pdLoading = gas('pdrows')
+    .then(d => (_pdRows = (d.rows || []).map(r => ({
+      wbs:r[0], name:r[1], pct:r[2], pf:parseShutDate(r[3]), team:r[4],
+      slack:r[5], cpct:r[6], summary:!!r[7], es:!!r[8], notes:r[9],
+      wo:r[10] || '', op:r[11] || '', start:parseShutDate(r[12] || ''), ms:!!r[13], dur:r[14]
+    })).filter(r => r.name)))
+    .catch(e => { _pdErr = e.message; _pdRows = []; return _pdRows; })
+    .finally(() => { _pdLoading = null; });
+  return _pdLoading;
+}
+
+function pdShow(name){
+  if (!name) return;
+  const a = ((_exec && _exec.areas) || []).find(x => pdNorm(x.name) === pdNorm(name)) || {};
+  const g = ((_gantt && _gantt.areas) || []).find(x => pdNorm(x.name) === pdNorm(name)) || {};
+  const pc = a.pctComplete ?? g.pctComplete ?? 0;
+  const ov = a.finishVariance || 0;
+  const f = (l,v) => `<div><div class="pd-label">${l}</div><div class="pd-value">${v}</div></div>`;
+  const tagCls = 'tag-' + workLvl(pc, a.targetPct);
+  document.getElementById('pdTitle').textContent = name;
+  document.getElementById('pdEyebrow').textContent = 'Executive Summary';
+  document.getElementById('pdBody').innerHTML =
+    `<div class="pd-bar"><b style="width:${Math.min(100,pc)}%"></b></div>
+     <div class="pd-grid">
+       ${f('% Work Complete', `<span class="tag ${tagCls}">${pc}%</span>`)}
+       ${f('Target (Baseline)', a.targetPct != null ? a.targetPct + '%' : '—')}
+       ${f('Start', pdEsc(a.start || '—'))}
+       ${f('Forecast Finish', pdEsc(a.forecastFinish || '—'))}
+       ${f('Total Work', a.totalWork != null ? fmtN1(a.totalWork) + ' h' : '—')}
+       ${f('Completed', a.completedWork != null ? fmtN1(a.completedWork) + ' h' : '—')}
+       ${f('Remaining', a.remainingWork != null ? fmtN1(a.remainingWork) + ' h' : '—')}
+       ${f('Duration', a.duration != null ? fmtN1(a.duration) + ' h' : '—')}
+       ${f('Hrs to Critical', a.hoursToCritical != null ? fmtN0(a.hoursToCritical) : '—')}
+       ${f('Finish Variance', a.finishVariance != null ? fvTag(ov) + ' h' : '—')}
+     </div>
+     <div id="pdDetail"><div class="pd-loading">Loading notes from schedule…</div></div>`;
+  document.getElementById('pdModal').classList.add('open');
+  pdFetch().then(rows => { if (document.getElementById('pdTitle').textContent === name) pdDetail(name, rows); });
+}
+
+let _pdLists = null, _pdSel = 'late';
+function pdDetail(name, rows){
+  const key = pdNorm(name), now = _statusDate || new Date();
+  const sumRow = rows.find(r => r.summary && r.es && pdNorm(r.name) === key)
+              || rows.find(r => r.summary && pdNorm(r.name) === key)
+              || rows.find(r => pdNorm(r.name) === key);
+  const pre  = sumRow && sumRow.wbs ? sumRow.wbs + '.' : null;
+  const kids = pre ? rows.filter(r => !r.summary && r.wbs && r.wbs.indexOf(pre) === 0) : [];
+  let h = '';
+  if (kids.length){
+    // "Late" and "Late by" are measured from the STATUS DATE of the upload
+    _pdLists = {
+      all:  { label:'All tasks',          rows: kids },
+      done: { label:'Complete',           rows: kids.filter(t => t.pct >= 100) },
+      prog: { label:'In progress',        rows: kids.filter(t => t.pct > 0 && t.pct < 100) },
+      late: { label:'Late',               rows: kids.filter(t => t.pct < 100 && t.pf && t.pf < now) },
+      crit: { label:'0 slack open',       rows: kids.filter(t => t.pct < 100 && t.slack <= 0) },
+    };
+    _pdSel = _pdLists.late.rows.length ? 'late' : 'all';
+    const tile = (k, color) => `<div class="pd-stat pd-tile" data-k="${k}" onclick="pdPick('${k}')" title="Show list">
+        <b style="color:${color}">${_pdLists[k].rows.length}</b><span>${k === 'all' ? 'Total' : _pdLists[k].label}</span></div>`;
+    h += `<div class="pd-sec-label">Tasks in this area <span class="pd-hint">— click a tile to list the tasks · 📝 = task has a Project note (hover to read)</span></div>
+      <div class="pd-stats">
+        ${tile('all', 'var(--bright)')}
+        ${tile('done', 'var(--green)')}
+        ${tile('prog', 'var(--blue)')}
+        ${tile('late', _pdLists.late.rows.length ? 'var(--red)' : 'var(--bright)')}
+        ${tile('crit', _pdLists.crit.rows.length ? 'var(--amber)' : 'var(--bright)')}
+      </div>
+      <div id="pdList"></div>`;
+  } else {
+    _pdLists = null;
+  }
+  const note = sumRow && sumRow.notes;
+  h += `<div class="pd-sec-label">Notes from Project</div>` +
+    (_pdErr && !rows.length
+      ? `<div class="pd-notes pd-empty">Notes could not be loaded (${pdEsc(_pdErr)}).</div>`
+      : note ? `<div class="pd-notes">${pdEsc(note)}</div>`
+             : `<div class="pd-notes pd-empty">No notes recorded against this summary task in Project.</div>`);
+  document.getElementById('pdDetail').innerHTML = h;
+  if (_pdLists) pdPick(_pdSel);
+}
+function pdPick(k){
+  if (!_pdLists || !_pdLists[k]) return;
+  _pdSel = k;
+  document.querySelectorAll('.pd-tile').forEach(el => el.classList.toggle('sel', el.dataset.k === k));
+  const now = _statusDate || new Date();
+  const L = _pdLists[k];
+  const cp = c => c === 1 ? '<span style="color:var(--red)">●</span> CP' : c === 2 ? '<span style="color:var(--amber)">●</span> CT' : '—';
+  const fmtD = d => d ? `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '—';
+  let list = L.rows.slice();
+  if (k === 'late') list.sort((x, y) => x.pf - y.pf);          // most overdue first
+  const MAX = 400;
+  const showLate = k === 'late';
+  const body = list.slice(0, MAX).map(t => {
+    const wo = t.wo ? `${pdEsc(t.wo)}${t.op ? '/' + pdEsc(t.op) : ''}` : '—';
+    const lateBy = showLate ? `<td style="color:var(--red);font-family:var(--font-d)">${pdDelay((now - t.pf) / 36e5)}</td>` : '';
+    const nt = t.notes ? ` <span class="pd-note" title="${pdEsc(t.notes)}">📝</span>` : '';
+    return `<tr><td class="pd-wbs">${pdEsc(t.wbs)}</td><td>${pdEsc(t.name)}${t.ms ? ' <span class="pd-ms">◆</span>' : ''}${nt}</td>
+      <td class="pd-wo">${wo}</td><td>${cp(t.cpct)}</td><td>${t.pct}%</td><td>${fmtD(t.pf)}</td>${lateBy}</tr>`;
+  }).join('');
+  document.getElementById('pdList').innerHTML = !list.length
+    ? `<div class="pd-more">No tasks in this list.</div>`
+    : `<div class="pd-list-head">${L.label} — ${list.length} task${list.length === 1 ? '' : 's'}${showLate ? ' (from status date ' + pdEsc(_statusDateTxt || '') + ')' : ''}</div>
+       <div class="pd-scroll"><table class="pd-late"><thead><tr><th>WBS</th><th>Task</th><th>WO / Op</th><th>CP/CT</th><th>%</th><th>Finish</th>${showLate ? '<th>Late by</th>' : ''}</tr></thead>
+       <tbody>${body}</tbody></table></div>` +
+      (list.length > MAX ? `<div class="pd-more">Showing first ${MAX} of ${list.length}.</div>` : '<div class="pd-more"></div>');
+}
+function pdClose(){ document.getElementById('pdModal').classList.remove('open'); }
+
+// ── VENDOR pop-up: work orders (header level) ─────────────────
+let _vwLists = null;
+function vendShow(team){
+  const v = vendList().find(x => x.team === team);
+  if (!v) return;
+  const src = (_vendor.wos && _vendor.wos[team]) || v.wos || [];
+  const wos = src
+    .filter(w => _vendArea < 0 || !Array.isArray(w[8]) || w[8].indexOf(_vendArea) >= 0)
+    .map(w => ({ wo:w[0], hdr:w[1], n:w[2], done:w[3], pct:w[4], start:w[5], finish:w[6], status:w[7] }));
+  const areaName = _vendArea >= 0 ? (_vendor.areas || [])[_vendArea] : '';
+  _vwLists = {
+    all:  { label:'All work orders', rows: wos },
+    done: { label:'Completed',       rows: wos.filter(w => w.status === 'Completed') },
+    prog: { label:'In progress',     rows: wos.filter(w => w.status === 'In progress') },
+    ns:   { label:'Not started',     rows: wos.filter(w => w.status === 'Not started') },
+  };
+  const f = (l, val) => `<div><div class="pd-label">${l}</div><div class="pd-value">${val}</div></div>`;
+  const varCls = x => x >= 0 ? 'tgt-ok' : x >= -5 ? 'tgt-warn' : 'tgt-bad';
+  const tile = (k, color) => `<div class="pd-stat pd-tile" data-k="${k}" onclick="vendPick('${k}')" title="Show list">
+      <b style="color:${color}">${_vwLists[k].rows.length}</b><span>${k === 'all' ? 'Work orders' : _vwLists[k].label}</span></div>`;
+  document.getElementById('pdEyebrow').textContent = 'Vendor' + (areaName ? ' — ' + areaName : '');
+  document.getElementById('pdTitle').textContent = team;
+  document.getElementById('pdBody').innerHTML =
+    `<div class="pd-grid">
+       ${f('Current Work', fmtN1(v.current) + ' h')}
+       ${f('Actual Work', fmtN1(v.actual) + ' h')}
+       ${f('Planned Work', fmtN1(v.planned) + ' h')}
+       ${f('Target %', v.targetPct.toFixed(1) + '%')}
+       ${f('Actual %', `<span class="${varCls(v.variance)}">${v.actualPct.toFixed(1)}%</span>`)}
+       ${f('Variance', `<b class="${varCls(v.variance)}">${v.variance > 0 ? '+' : ''}${v.variance.toFixed(1)}</b>`)}
+     </div>
+     <div class="pd-sec-label">Work orders <span class="pd-hint">— header level, this vendor's operations only · click a tile to filter</span></div>
+     <div class="pd-stats" style="grid-template-columns:repeat(4,1fr)">
+       ${tile('all', 'var(--bright)')}${tile('done', 'var(--green)')}${tile('prog', 'var(--blue)')}${tile('ns', 'var(--amber)')}
+     </div>
+     <div id="pdList"></div>`;
+  document.getElementById('pdModal').classList.add('open');
+  vendPick('all');
+}
+function vendPick(k){
+  if (!_vwLists || !_vwLists[k]) return;
+  document.querySelectorAll('.pd-tile').forEach(el => el.classList.toggle('sel', el.dataset.k === k));
+  const L = _vwLists[k];
+  const stTag = s => `<span class="tag ${s === 'Completed' ? 'tag-green' : s === 'In progress' ? 'tag-amber' : 'tag-red'}">${s}</span>`;
+  const body = L.rows.map(w => `<tr>
+      <td class="pd-wo">${pdEsc(w.wo)}</td>
+      <td>${pdEsc(w.hdr || '—')}</td>
+      <td>${w.done}/${w.n}</td>
+      <td>${w.pct}%</td>
+      <td class="pd-wo">${pdEsc(w.start || '—')}</td>
+      <td class="pd-wo">${pdEsc(w.finish || '—')}</td>
+      <td>${stTag(w.status)}</td></tr>`).join('');
+  document.getElementById('pdList').innerHTML = !L.rows.length
+    ? `<div class="pd-more">No work orders in this list.</div>`
+    : `<div class="pd-list-head">${L.label} — ${L.rows.length}</div>
+       <div class="pd-scroll"><table class="pd-late"><thead><tr><th>Work Order</th><th>Description</th><th>Ops done</th><th>%</th><th>Start</th><th>Finish</th><th>Status</th></tr></thead>
+       <tbody>${body}</tbody></table></div>`;
+}
+
+// ── CRITICAL WORKS pop-up: tasks in the work order ────────────
+function critShow(key){
+  if (!key) return;
+  const c = ((_critical && _critical.rows) || []).find(r => String(r.workOrder) === String(key)) || {};
+  document.getElementById('pdEyebrow').textContent = 'Critical Works — ' + (c.cpct === 1 ? 'CP' : c.cpct === 2 ? 'CT' : '');
+  document.getElementById('pdTitle').textContent = key + (c.wo ? ' — ' + c.wo : '');
+  document.getElementById('pdBody').innerHTML = '<div class="pd-loading">Loading tasks from schedule…</div>';
+  document.getElementById('pdModal').classList.add('open');
+  const title = document.getElementById('pdTitle').textContent;
+  pdFetch().then(rows => {
+    if (document.getElementById('pdTitle').textContent !== title) return;
+    // tasks: operations of the work order, or (for a flagged WBS row) the tasks beneath it
+    let tasks = rows.filter(r => r.wo && String(r.wo) === String(key) && !r.summary);
+    if (!tasks.length) tasks = rows.filter(r => !r.summary && r.wbs && r.wbs.indexOf(key + '.') === 0);
+    tasks.sort((a, b) => (parseFloat(a.op) || 0) - (parseFloat(b.op) || 0) || (a.start || 0) - (b.start || 0));
+    // Executive Summary area = deepest Exec-Summary row whose WBS contains the task
+    const esRows = rows.filter(r => r.es && r.wbs).sort((a, b) => b.wbs.length - a.wbs.length);
+    const areaOf = t => { const e = esRows.find(x => t.wbs === x.wbs || (t.wbs || '').indexOf(x.wbs + '.') === 0); return e ? e.name : '—'; };
+    const durTxt = v => { const n = parseFloat(v); return isNaN(n) ? (v || '—') : fmtN1(n) + ' h'; };
+    const pctTag = p => `<span class="tag ${p >= 100 ? 'tag-green' : p > 0 ? 'tag-amber' : 'tag-red'}">${p}%</span>`;
+    const body = tasks.map(t => `<tr>
+        <td class="pd-wo">${pdEsc(t.op || '')}</td>
+        <td>${pdEsc(t.name)}${t.notes ? ` <span class="pd-note" title="${pdEsc(t.notes)}">📝</span>` : ''}</td>
+        <td>${durTxt(t.dur)}</td>
+        <td>${pctTag(t.pct)}</td>
+        <td style="text-align:left">${pdEsc(areaOf(t))}</td></tr>`).join('');
+    const f = (l, v) => `<div><div class="pd-label">${l}</div><div class="pd-value">${v}</div></div>`;
+    document.getElementById('pdBody').innerHTML =
+      `<div class="pd-grid">
+         ${f('Team', pdEsc(c.team || '—'))}
+         ${f('Start', pdEsc(c.start || '—'))}
+         ${f('Finish', pdEsc(c.finish || '—'))}
+         ${f('% Complete (all ops)', c.pctComplete != null ? pctTag(c.pctComplete) : '—')}
+         ${f('Total Slack', c.totalSlack != null ? fmtN1(c.totalSlack) + ' h' : '—')}
+         ${f('Operations complete', c.opsTotal != null ? c.opsDone + ' of ' + c.opsTotal : tasks.length)}
+       </div>
+       <div class="pd-sec-label">Tasks in this work order</div>` +
+      (tasks.length
+        ? `<div class="pd-scroll"><table class="pd-late"><thead><tr><th>Op</th><th>Task</th><th>Duration</th><th>% Complete</th><th style="text-align:left">Executive Summary area</th></tr></thead><tbody>${body}</tbody></table></div>`
+        : `<div class="pd-notes pd-empty">No tasks found for this work order${_pdErr ? ' (' + pdEsc(_pdErr) + ')' : ''}.</div>`);
+  });
+}
+// ── STATUS DATE (scheduler edit) ──────────────────────────────
+// Saved by the dashboard Apps Script (doPost, scheduler PIN) for this site,
+// so the dashboard, Gantt and everyone viewing use the same status date.
+function sdOpen(){
+  const d = _statusDate || new Date(), p = n => String(n).padStart(2, '0');
+  const hs = document.getElementById('sdHour'), ms = document.getElementById('sdMin');
+  if (!hs.options.length) {
+    hs.innerHTML = Array.from({length: 24}, (_, h) => `<option value="${p(h)}">${p(h)}:</option>`).join('');
+    ms.innerHTML = ['00','15','30','45'].map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+  document.getElementById('sdDay').value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;
+  hs.value = p(d.getHours());
+  ms.value = p(Math.floor(d.getMinutes() / 15) * 15);
+  document.getElementById('sdPin').value = '';
+  document.getElementById('sdMsg').textContent = '';
+  document.getElementById('sdModal').classList.add('open');
+  setTimeout(() => document.getElementById('sdPin').focus(), 50);
+}
+function sdClose(){ document.getElementById('sdModal').classList.remove('open'); }
+async function sdSave(){
+  const day = document.getElementById('sdDay').value;
+  const v = day ? `${day}T${document.getElementById('sdHour').value}:${document.getElementById('sdMin').value}` : '';
+  const pin = document.getElementById('sdPin').value.trim();
+  const msg = document.getElementById('sdMsg'), btn = document.getElementById('sdSave');
+  if (!v)   { msg.style.color = 'var(--red)'; msg.textContent = 'Choose a date and time.'; return; }
+  if (!pin) { msg.style.color = 'var(--red)'; msg.textContent = 'Enter the scheduler PIN.'; return; }
+  btn.disabled = true; msg.style.color = 'var(--muted)'; msg.textContent = 'Saving…';
+  try {
+    const r = await fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ site: SITE, action: 'setStatusDate', pin, statusDate: v }) });
+    const d = await r.json();
+    if (!d.ok) { msg.style.color = 'var(--red)'; msg.textContent = d.message || 'Could not save.'; return; }
+    sdClose();
+    loadAll();
+  } catch (e) {
+    msg.style.color = 'var(--red)'; msg.textContent = 'Could not save: ' + e.message;
+  } finally { btn.disabled = false; }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('sdModal').classList.contains('open')) sdSave(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { pdClose(); sdClose(); } });
+// Clear the cache when the dashboard's Refresh runs, so notes are re-read next click
+(function(){ const orig = window.loadAll; if (typeof orig === 'function') window.loadAll = function(){ _pdRows = null; _pdErr = null; return orig.apply(this, arguments); }; })();
+</script>
+</body>
+</html>

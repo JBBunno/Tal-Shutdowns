@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<!-- Short address for this dashboard: /d2/  →  /dashboard/?site=d2
+     Keeps any extra options, e.g. /d2/?tv=1 for the TV display. -->
+<html lang="en"><head><meta charset="UTF-8"><title>CGP1 Shutdown Dashboard</title>
+<script>
+  var q = location.search ? '&' + location.search.slice(1) : '';
+  location.replace('../dashboard/?site=d2' + q + location.hash);
+</script>
+</head><body><a href="../dashboard/?site=d2">Open CGP1 Shutdown Dashboard</a></body></html>
